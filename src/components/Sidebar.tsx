@@ -1,6 +1,6 @@
-import { LayoutDashboard, Users, Package, Upload, ClipboardCheck } from 'lucide-react';
+import { LayoutDashboard, Users, Package } from 'lucide-react';
 
-export type PageType = 'dashboard' | 'directory' | 'devices' | 'import' | 'provisioning';
+export type PageType = 'dashboard' | 'directory' | 'devices';
 
 interface SidebarProps {
   currentPage: PageType;
@@ -12,8 +12,6 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
     { id: 'dashboard' as PageType, label: 'Dashboard', icon: LayoutDashboard },
     { id: 'directory' as PageType, label: 'User Directory', icon: Users },
     { id: 'devices' as PageType, label: 'Devices', icon: Package },
-    { id: 'provisioning' as PageType, label: 'Provisioning', icon: ClipboardCheck },
-    { id: 'import' as PageType, label: 'Import Data', icon: Upload },
   ];
 
   return (
@@ -46,7 +44,7 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
       </nav>
 
       <div className="p-4 border-t border-slate-700 text-xs text-slate-400">
-        <p>Multi-Territory Asset Management</p>
+        <p>Powered by Google Sheets</p>
       </div>
     </div>
   );

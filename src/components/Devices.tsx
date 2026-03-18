@@ -1,403 +1,338 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
-import { Package, Search, Filter, Plus, X } from 'lucide-react';
-import type { Database, DeviceType, DeviceStatus } from '../lib/database.types';
-
-type DeviceRow = Database['public']['Tables']['devices']['Row'];
-
-interface DeviceWithUser extends DeviceRow {
-  user_name?: string;
-}
+import { useState } from 'react';
+import { Search, Plus, Pencil, Trash2, X } from 'lucide-react';
+import { useDevices } from '../hooks/useGoogleSheets';
+import type { Device } from '../lib/types';
 
 export default function Devices() {
-  const [devices, setDevices] = useState<DeviceWithUser[]>([]);
-  const [filteredDevices, setFilteredDevices] = useState<DeviceWithUser[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { devices, loading, error, addDevice, updateDevice, deleteDevice } = useDevices();
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newDevice, setNewDevice] = useState({
-    device_type: 'APX_NEXT' as DeviceType,
-    serial_number: '',
-    device_id: '',
-    status: 'available' as DeviceStatus,
-    notes: '',
+  const [editingDevice, setEditingDevice] = useState<Device | null>(null);
+
+  const filteredDevices = devices.filter((device) => {
+    const matchesSearch =
+      device.serialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      device.assetTag.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      device.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      device.assignedTo.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesStatus = filterStatus === 'all' || device.status === filterStatus;
+
+    return matchesSearch && matchesStatus;
   });
 
-  const deviceTypes: DeviceType[] = ['APX_NEXT', 'N70', 'V700', 'SVX'];
-  const deviceStatuses: DeviceStatus[] = ['available', 'assigned', 'retired', 'maintenance'];
-
-  useEffect(() => {
-    loadDevices();
-  }, []);
-
-  useEffect(() => {
-    applyFilters();
-  }, [searchTerm, filterType, filterStatus, devices]);
-
-  async function loadDevices() {
-    try {
-      const { data: devicesData, error } = await supabase
-        .from('devices')
-        .select('*')
-        .order('device_type');
-
-      if (error) throw error;
-
-      const devicesWithUsers = await Promise.all(
-        (devicesData || []).map(async (device) => {
-          if (device.user_id) {
-            const { data: userData } = await supabase
-              .from('users_directory')
-              .select('name')
-              .eq('id', device.user_id)
-              .maybeSingle();
-
-            return { ...device, user_name: userData?.name };
-          }
-          return device;
-        })
-      );
-
-      setDevices(devicesWithUsers);
-    } catch (error) {
-      console.error('Error loading devices:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function applyFilters() {
-    let filtered = [...devices];
-
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (device) =>
-          device.serial_number.toLowerCase().includes(term) ||
-          device.device_id.toLowerCase().includes(term) ||
-          device.device_type.toLowerCase().includes(term) ||
-          device.user_name?.toLowerCase().includes(term)
-      );
-    }
-
-    if (filterType !== 'all') {
-      filtered = filtered.filter((device) => device.device_type === filterType);
-    }
-
-    if (filterStatus !== 'all') {
-      filtered = filtered.filter((device) => device.status === filterStatus);
-    }
-
-    setFilteredDevices(filtered);
-  }
-
-  function getStatusColor(status: string) {
-    switch (status) {
-      case 'assigned':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'available':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'retired':
-        return 'bg-slate-100 text-slate-800 border-slate-200';
-      case 'maintenance':
-        return 'bg-amber-100 text-amber-800 border-amber-200';
-      default:
-        return 'bg-slate-100 text-slate-800 border-slate-200';
-    }
-  }
-
-  function getTypeColor(type: string) {
-    switch (type) {
-      case 'APX_NEXT':
-        return 'bg-purple-100 text-purple-800';
-      case 'N70':
-        return 'bg-cyan-100 text-cyan-800';
-      case 'V700':
-        return 'bg-emerald-100 text-emerald-800';
-      case 'SVX':
-        return 'bg-orange-100 text-orange-800';
-      default:
-        return 'bg-slate-100 text-slate-800';
-    }
-  }
-
-  async function handleAddDevice() {
-    if (!newDevice.serial_number) {
-      alert('Serial number is required');
-      return;
-    }
+  const handleAddDevice = async (formData: FormData) => {
+    const newDevice = {
+      serialNumber: formData.get('serialNumber') as string,
+      assetTag: formData.get('assetTag') as string,
+      model: formData.get('model') as string,
+      assignedTo: formData.get('assignedTo') as string,
+      status: formData.get('status') as string,
+      location: formData.get('location') as string,
+      notes: formData.get('notes') as string,
+    };
 
     try {
-      const { error } = await supabase.from('devices').insert({
-        device_type: newDevice.device_type,
-        serial_number: newDevice.serial_number,
-        device_id: newDevice.device_id,
-        status: newDevice.status,
-        notes: newDevice.notes,
-      });
-
-      if (error) throw error;
-
+      await addDevice(newDevice);
       setShowAddModal(false);
-      setNewDevice({
-        device_type: 'APX_NEXT',
-        serial_number: '',
-        device_id: '',
-        status: 'available',
-        notes: '',
-      });
-      loadDevices();
-    } catch (error) {
-      console.error('Error adding device:', error);
-      alert('Failed to add device: ' + (error as Error).message);
+    } catch (err) {
+      console.error('Failed to add device:', err);
+      alert('Failed to add device. Please try again.');
     }
-  }
+  };
+
+  const handleUpdateDevice = async (formData: FormData) => {
+    if (!editingDevice) return;
+
+    const updates = {
+      serialNumber: formData.get('serialNumber') as string,
+      assetTag: formData.get('assetTag') as string,
+      model: formData.get('model') as string,
+      assignedTo: formData.get('assignedTo') as string,
+      status: formData.get('status') as string,
+      location: formData.get('location') as string,
+      notes: formData.get('notes') as string,
+    };
+
+    try {
+      await updateDevice(editingDevice.id, updates);
+      setEditingDevice(null);
+    } catch (err) {
+      console.error('Failed to update device:', err);
+      alert('Failed to update device. Please try again.');
+    }
+  };
+
+  const handleDeleteDevice = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this device?')) return;
+
+    try {
+      await deleteDevice(id);
+    } catch (err) {
+      console.error('Failed to delete device:', err);
+      alert('Failed to delete device. Please try again.');
+    }
+  };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-slate-500">Loading devices...</div>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-lg text-slate-600">Loading devices...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-lg text-red-600">Error: {error}</div>
       </div>
     );
   }
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">Device Inventory</h1>
-          <p className="text-slate-600 mt-1">Manage and track all devices across territories</p>
-        </div>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-slate-900">Device Inventory</h1>
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           <Plus size={20} />
           Add Device
         </button>
       </div>
 
-      <div className="bg-white rounded-lg shadow mb-6 p-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
-            <input
-              type="text"
-              placeholder="Search by serial, device ID, type..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
-            >
-              <option value="all">All Types</option>
-              {deviceTypes.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
-            >
-              <option value="all">All Statuses</option>
-              {deviceStatuses.map((status) => (
-                <option key={status} value={status}>
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                </option>
-              ))}
-            </select>
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+          <input
+            type="text"
+            placeholder="Search devices..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
+
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+          className="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="all">All Statuses</option>
+          <option value="available">Available</option>
+          <option value="assigned">Assigned</option>
+          <option value="maintenance">Maintenance</option>
+          <option value="retired">Retired</option>
+        </select>
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                  Type
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                  Serial Number
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                  Device ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                  Assigned To
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">
-                  Notes
-                </th>
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-slate-50 border-b border-slate-200">
+            <tr>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Serial Number</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Asset Tag</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Model</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Assigned To</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Status</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Location</th>
+              <th className="px-6 py-3 text-right text-sm font-semibold text-slate-700">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-200">
+            {filteredDevices.map((device) => (
+              <tr key={device.id} className="hover:bg-slate-50 transition-colors">
+                <td className="px-6 py-4 text-sm font-medium text-slate-900">{device.serialNumber}</td>
+                <td className="px-6 py-4 text-sm text-slate-600">{device.assetTag}</td>
+                <td className="px-6 py-4 text-sm text-slate-600">{device.model}</td>
+                <td className="px-6 py-4 text-sm text-slate-600">{device.assignedTo || '-'}</td>
+                <td className="px-6 py-4">
+                  <span
+                    className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                      device.status === 'available'
+                        ? 'bg-green-100 text-green-800'
+                        : device.status === 'assigned'
+                        ? 'bg-blue-100 text-blue-800'
+                        : device.status === 'maintenance'
+                        ? 'bg-amber-100 text-amber-800'
+                        : 'bg-slate-100 text-slate-800'
+                    }`}
+                  >
+                    {device.status}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-sm text-slate-600">{device.location}</td>
+                <td className="px-6 py-4 text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      onClick={() => setEditingDevice(device)}
+                      className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                    >
+                      <Pencil size={18} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteDevice(device.id)}
+                      className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-slate-200">
-              {filteredDevices.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
-                    No devices found. Try adjusting your filters or add a new device.
-                  </td>
-                </tr>
-              ) : (
-                filteredDevices.map((device) => (
-                  <tr key={device.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-3 py-1 text-xs font-medium rounded-full ${getTypeColor(device.device_type)}`}>
-                        {device.device_type}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="font-medium text-slate-900">{device.serial_number}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                      {device.device_id || '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                      {device.user_name || <span className="text-slate-400">Unassigned</span>}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-3 py-1 text-xs font-medium rounded-full border ${getStatusColor(
-                          device.status
-                        )}`}
-                      >
-                        {device.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-600 max-w-xs truncate">
-                      {device.notes || '-'}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            ))}
+          </tbody>
+        </table>
 
-      <div className="mt-4 text-sm text-slate-600">
-        Showing {filteredDevices.length} of {devices.length} devices
+        {filteredDevices.length === 0 && (
+          <div className="text-center py-12 text-slate-500">
+            {searchTerm || filterStatus !== 'all' ? 'No devices found matching your filters.' : 'No devices found.'}
+          </div>
+        )}
       </div>
 
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-slate-900">Add New Device</h2>
-              <button
-                onClick={() => setShowAddModal(false)}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Device Type <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={newDevice.device_type}
-                  onChange={(e) => setNewDevice({ ...newDevice, device_type: e.target.value as DeviceType })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {deviceTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Serial Number <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={newDevice.serial_number}
-                  onChange={(e) => setNewDevice({ ...newDevice, serial_number: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter serial number"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Device ID</label>
-                <input
-                  type="text"
-                  value={newDevice.device_id}
-                  onChange={(e) => setNewDevice({ ...newDevice, device_id: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter device ID"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
-                <select
-                  value={newDevice.status}
-                  onChange={(e) => setNewDevice({ ...newDevice, status: e.target.value as DeviceStatus })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {deviceStatuses.map((status) => (
-                    <option key={status} value={status}>
-                      {status.charAt(0).toUpperCase() + status.slice(1)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
-                <textarea
-                  value={newDevice.notes}
-                  onChange={(e) => setNewDevice({ ...newDevice, notes: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows={3}
-                  placeholder="Add any notes about this device"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setShowAddModal(false)}
-                className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAddDevice}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Add Device
-              </button>
-            </div>
-          </div>
-        </div>
+        <DeviceFormModal
+          title="Add New Device"
+          onSubmit={handleAddDevice}
+          onClose={() => setShowAddModal(false)}
+        />
       )}
+
+      {editingDevice && (
+        <DeviceFormModal
+          title="Edit Device"
+          device={editingDevice}
+          onSubmit={handleUpdateDevice}
+          onClose={() => setEditingDevice(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+interface DeviceFormModalProps {
+  title: string;
+  device?: Device;
+  onSubmit: (formData: FormData) => void;
+  onClose: () => void;
+}
+
+function DeviceFormModal({ title, device, onSubmit, onClose }: DeviceFormModalProps) {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    onSubmit(formData);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-slate-900">{title}</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+            <X size={24} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Serial Number</label>
+            <input
+              type="text"
+              name="serialNumber"
+              defaultValue={device?.serialNumber}
+              required
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Asset Tag</label>
+            <input
+              type="text"
+              name="assetTag"
+              defaultValue={device?.assetTag}
+              required
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Model</label>
+            <input
+              type="text"
+              name="model"
+              defaultValue={device?.model}
+              required
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Assigned To</label>
+            <input
+              type="text"
+              name="assignedTo"
+              defaultValue={device?.assignedTo}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+            <select
+              name="status"
+              defaultValue={device?.status || 'available'}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="available">Available</option>
+              <option value="assigned">Assigned</option>
+              <option value="maintenance">Maintenance</option>
+              <option value="retired">Retired</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Location</label>
+            <input
+              type="text"
+              name="location"
+              defaultValue={device?.location}
+              required
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
+            <textarea
+              name="notes"
+              defaultValue={device?.notes}
+              rows={3}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              type="submit"
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              {device ? 'Update' : 'Add'} Device
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
