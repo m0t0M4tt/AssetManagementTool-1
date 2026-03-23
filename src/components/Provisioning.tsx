@@ -311,17 +311,14 @@ function ProvisioningDetailModal({ user, accessToken, onClose }: ProvisioningDet
       checkedOutToUser: false,
     }
   });
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
 
-  const handleStepToggle = async (
+  const handleStepToggle = (
     section: 'apxNext' | 'apxN70' | 'phoneApps' | 'svxV700',
     stepKey: string,
     currentValue: boolean
   ) => {
-    if (!accessToken) {
-      console.error('No access token available');
-      return;
-    }
-
     const newValue = !currentValue;
 
     setSteps(prev => ({
@@ -332,13 +329,41 @@ function ProvisioningDetailModal({ user, accessToken, onClose }: ProvisioningDet
       }
     }));
 
-    await ProvisioningService.updateProvisioningStep(
-      accessToken,
-      user,
-      section,
-      stepKey,
-      newValue
-    );
+    setHasChanges(true);
+  };
+
+  const handleSave = async () => {
+    if (!accessToken) {
+      console.error('No access token available');
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const sections: Array<'apxNext' | 'apxN70' | 'phoneApps' | 'svxV700'> = ['apxNext', 'apxN70', 'phoneApps', 'svxV700'];
+
+      for (const section of sections) {
+        const sectionSteps = steps[section];
+        for (const [stepKey, value] of Object.entries(sectionSteps)) {
+          await ProvisioningService.updateProvisioningStep(
+            accessToken,
+            user,
+            section,
+            stepKey,
+            value
+          );
+        }
+      }
+
+      setHasChanges(false);
+      alert('Changes saved successfully!');
+    } catch (error) {
+      console.error('Error saving changes:', error);
+      alert('Failed to save changes. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const renderStepSection = (
@@ -390,7 +415,7 @@ function ProvisioningDetailModal({ user, accessToken, onClose }: ProvisioningDet
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] flex flex-col">
         <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-slate-900">{user.name}</h2>
@@ -404,7 +429,7 @@ function ProvisioningDetailModal({ user, accessToken, onClose }: ProvisioningDet
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 overflow-y-auto flex-1">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {renderStepSection(
               'APX Next',
@@ -465,6 +490,33 @@ function ProvisioningDetailModal({ user, accessToken, onClose }: ProvisioningDet
               'bg-amber-50 border-amber-200',
               'svxV700'
             )}
+          </div>
+        </div>
+
+        <div className="sticky bottom-0 bg-white border-t border-slate-200 px-6 py-4 flex items-center justify-between">
+          <div>
+            {hasChanges && (
+              <p className="text-sm text-amber-600 font-medium">You have unsaved changes</p>
+            )}
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-slate-600 hover:text-slate-800 font-medium transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={!hasChanges || isSaving}
+              className={`px-6 py-2 rounded-lg font-medium transition-all ${
+                hasChanges && !isSaving
+                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+              }`}
+            >
+              {isSaving ? 'Saving...' : 'Save Changes'}
+            </button>
           </div>
         </div>
       </div>
