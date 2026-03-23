@@ -1,9 +1,17 @@
-import { getSheetWithCustomHeader } from './googleSheets';
+import { getSheetWithCustomHeader, getSheetDataConsolidated } from './googleSheets';
 import type { User, Device, ProvisioningSteps } from './types';
+
+async function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 export class DataService {
   private static async getSheet(accessToken: string, tabName: string) {
     return await getSheetWithCustomHeader(accessToken, tabName);
+  }
+
+  private static async getSheetData(accessToken: string, tabName: string) {
+    return await getSheetDataConsolidated(accessToken, tabName);
   }
 
   private static getFlexibleValue(row: any, possibleHeaders: string[]): string {
@@ -48,18 +56,26 @@ export class DataService {
   static async fetchUsers(accessToken: string): Promise<User[]> {
     const tabs = ['Presales', 'Central', 'Northeast', 'Southeast', 'West', 'Federal', 'Software'];
 
-    console.log('Starting fetch for tabs:', tabs);
+    console.log('Starting CONSOLIDATED fetch for tabs:', tabs);
 
     this.extractedDevices = [];
     const allUsers: User[] = [];
 
-    for (const tabName of tabs) {
-      try {
-        console.log(`Processing tab: ${tabName}`);
-        const sheet = await this.getSheet(accessToken, tabName);
-        const rows = await sheet.getRows();
+    for (let i = 0; i < tabs.length; i++) {
+      const tabName = tabs[i];
 
-        console.log(`Tab ${tabName}: Found ${rows.length} rows`);
+      // Add staggered delay between tabs to avoid rate limiting
+      if (i > 0) {
+        await delay(200);
+      }
+
+      try {
+        console.log(`[${i + 1}/${tabs.length}] Processing tab: ${tabName}`);
+
+        // Use consolidated fetching - SINGLE API CALL per tab
+        const { headers, rows } = await this.getSheetData(accessToken, tabName);
+
+        console.log(`Tab ${tabName}: Found ${rows.length} data rows (consolidated fetch)`);
 
         if (rows.length === 0) {
           console.warn(`Tab ${tabName} has 0 rows - empty or headers not set to Row 3`);
@@ -68,67 +84,64 @@ export class DataService {
 
         const deviceMap = new Map<string, Device>();
 
-        for (const row of rows) {
-          const rowWidth = row._rawData?.length || 0;
-          console.log(`Tab: ${tabName}, Row Width: ${rowWidth} columns`);
+        for (const rowData of rows) {
+          const owner = rowData[1]?.toString() || '';
+          const loginC = rowData[2]?.toString() || '';
+          const loginH = rowData[7]?.toString() || '';
+          const unit = rowData[11]?.toString() || '';
+          const alias = rowData[12]?.toString() || '';
+          const apxNextUnitId = rowData[13]?.toString() || '';
+          const apxN70UnitId = rowData[14]?.toString() || '';
 
-          const owner = this.getValueByIndex(row, 1);
-          const loginC = this.getValueByIndex(row, 2);
-          const loginH = this.getValueByIndex(row, 7);
-          const unit = this.getValueByIndex(row, 11);
-          const alias = this.getValueByIndex(row, 12);
-          const apxNextUnitId = this.getValueByIndex(row, 13);
-          const apxN70UnitId = this.getValueByIndex(row, 14);
+          const colW = rowData[22]?.toString() || '';
+          const colX = rowData[23]?.toString() || '';
+          const colY = rowData[24]?.toString() || '';
+          const colZ = rowData[25]?.toString() || '';
 
-          const colW = this.getValueByIndex(row, 22);
-          const colX = this.getValueByIndex(row, 23);
-          const colY = this.getValueByIndex(row, 24);
-          const colZ = this.getValueByIndex(row, 25);
-
-          const radioIdAD = this.getValueByIndex(row, 29);
-          const radioIdAE = this.getValueByIndex(row, 30);
-          const radioIdAF = this.getValueByIndex(row, 31);
-          const radioIdAG = this.getValueByIndex(row, 32);
+          const radioIdAD = rowData[29]?.toString() || '';
+          const radioIdAE = rowData[30]?.toString() || '';
+          const radioIdAF = rowData[31]?.toString() || '';
+          const radioIdAG = rowData[32]?.toString() || '';
 
           // Provisioning columns: AM to BJ (columns 38-61)
           // APX Next steps: AM-AU (38-46)
           const apxNextSteps = {
-            createNextUser: this.getValueByIndex(row, 38) === 'TRUE',
-            provisionP1UserRoles: this.getValueByIndex(row, 39) === 'TRUE',
-            provisionP1ConcurrentLogins: this.getValueByIndex(row, 40) === 'TRUE',
-            p1ProvisionUnitId: this.getValueByIndex(row, 41) === 'TRUE',
-            p1UnitPreassignment: this.getValueByIndex(row, 42) === 'TRUE',
-            placeUnitOnDutyPsap: this.getValueByIndex(row, 43) === 'TRUE',
-            awareAddDevice: this.getValueByIndex(row, 44) === 'TRUE',
-            p1AddDevice: this.getValueByIndex(row, 45) === 'TRUE',
-            awareDataSharing: this.getValueByIndex(row, 46) === 'TRUE',
+            createNextUser: rowData[38]?.toString() === 'TRUE',
+            provisionP1UserRoles: rowData[39]?.toString() === 'TRUE',
+            provisionP1ConcurrentLogins: rowData[40]?.toString() === 'TRUE',
+            p1ProvisionUnitId: rowData[41]?.toString() === 'TRUE',
+            p1UnitPreassignment: rowData[42]?.toString() === 'TRUE',
+            placeUnitOnDutyPsap: rowData[43]?.toString() === 'TRUE',
+            awareAddDevice: rowData[44]?.toString() === 'TRUE',
+            p1AddDevice: rowData[45]?.toString() === 'TRUE',
+            awareDataSharing: rowData[46]?.toString() === 'TRUE',
           };
 
           // APX N70 steps: AV-BD (47-55)
           const apxN70Steps = {
-            createNextUser: this.getValueByIndex(row, 47) === 'TRUE',
-            provisionP1UserRoles: this.getValueByIndex(row, 48) === 'TRUE',
-            provisionP1ConcurrentLogins: this.getValueByIndex(row, 49) === 'TRUE',
-            p1ProvisionUnitId: this.getValueByIndex(row, 50) === 'TRUE',
-            p1UnitPreassignment: this.getValueByIndex(row, 51) === 'TRUE',
-            placeUnitOnDutyPsap: this.getValueByIndex(row, 52) === 'TRUE',
-            awareAddDevice: this.getValueByIndex(row, 53) === 'TRUE',
-            p1AddDevice: this.getValueByIndex(row, 54) === 'TRUE',
-            awareDataSharing: this.getValueByIndex(row, 55) === 'TRUE',
+            createNextUser: rowData[47]?.toString() === 'TRUE',
+            provisionP1UserRoles: rowData[48]?.toString() === 'TRUE',
+            provisionP1ConcurrentLogins: rowData[49]?.toString() === 'TRUE',
+            p1ProvisionUnitId: rowData[50]?.toString() === 'TRUE',
+            p1UnitPreassignment: rowData[51]?.toString() === 'TRUE',
+            placeUnitOnDutyPsap: rowData[52]?.toString() === 'TRUE',
+            awareAddDevice: rowData[53]?.toString() === 'TRUE',
+            p1AddDevice: rowData[54]?.toString() === 'TRUE',
+            awareDataSharing: rowData[55]?.toString() === 'TRUE',
           };
 
           // Phone Apps steps: BE-BH (56-59)
           const phoneAppsSteps = {
-            responderCoreIdPhone: this.getValueByIndex(row, 56) === 'TRUE',
-            responderCoreIdPd: this.getValueByIndex(row, 57) === 'TRUE',
-            rapidDeployMapping: this.getValueByIndex(row, 58) === 'TRUE',
-            rapidDeployLightning: this.getValueByIndex(row, 59) === 'TRUE',
+            responderCoreIdPhone: rowData[56]?.toString() === 'TRUE',
+            responderCoreIdPd: rowData[57]?.toString() === 'TRUE',
+            rapidDeployMapping: rowData[58]?.toString() === 'TRUE',
+            rapidDeployLightning: rowData[59]?.toString() === 'TRUE',
           };
 
           // Body Worn Camera steps: BI-BJ (60-61)
           const svxV700Steps = {
-            setupInDeviceManagement: this.getValueByIndex(row, 60) === 'TRUE',
-            checkedOutToUser: this.getValueByIndex(row, 61) === 'TRUE',
+            setupInDeviceManagement: rowData[60]?.toString() === 'TRUE',
+            checkedOutToUser: rowData[61]?.toString() === 'TRUE',
           };
 
           if (!colW?.trim() && !colX?.trim() && !colY?.trim() && !colZ?.trim()) {
@@ -328,15 +341,23 @@ export class DataService {
     const tabs = ['Presales', 'Central', 'Northeast', 'Southeast', 'West', 'Federal', 'Software'];
     const allDevices: Device[] = [];
 
-    console.log('Starting device fetch for tabs:', tabs);
+    console.log('Starting CONSOLIDATED device fetch for tabs:', tabs);
 
-    for (const tabName of tabs) {
+    for (let i = 0; i < tabs.length; i++) {
+      const tabName = tabs[i];
+
+      // Add staggered delay between tabs to avoid rate limiting
+      if (i > 0) {
+        await delay(200);
+      }
+
       try {
-        console.log(`Fetching devices from tab: ${tabName}`);
-        const sheet = await this.getSheet(accessToken, tabName);
-        const rows = await sheet.getRows();
+        console.log(`[${i + 1}/${tabs.length}] Fetching devices from tab: ${tabName}`);
 
-        console.log(`Tab ${tabName}: Found ${rows.length} rows for device extraction`);
+        // Use consolidated fetching - SINGLE API CALL per tab
+        const { headers, rows } = await this.getSheetData(accessToken, tabName);
+
+        console.log(`Tab ${tabName}: Found ${rows.length} rows for device extraction (consolidated fetch)`);
 
         if (rows.length === 0) {
           console.warn(`Tab ${tabName} has 0 rows - empty or headers not set to Row 3`);
@@ -345,22 +366,22 @@ export class DataService {
 
         const deviceMap = new Map<string, Device>();
 
-        for (const row of rows) {
-          const owner = this.getValueByIndex(row, 1);
-          const loginC = this.getValueByIndex(row, 2);
-          const loginH = this.getValueByIndex(row, 7);
-          const unit = this.getValueByIndex(row, 11);
-          const alias = this.getValueByIndex(row, 12);
+        for (const rowData of rows) {
+          const owner = rowData[1]?.toString() || '';
+          const loginC = rowData[2]?.toString() || '';
+          const loginH = rowData[7]?.toString() || '';
+          const unit = rowData[11]?.toString() || '';
+          const alias = rowData[12]?.toString() || '';
 
-          const colW = this.getValueByIndex(row, 22);
-          const colX = this.getValueByIndex(row, 23);
-          const colY = this.getValueByIndex(row, 24);
-          const colZ = this.getValueByIndex(row, 25);
+          const colW = rowData[22]?.toString() || '';
+          const colX = rowData[23]?.toString() || '';
+          const colY = rowData[24]?.toString() || '';
+          const colZ = rowData[25]?.toString() || '';
 
-          const radioIdAD = this.getValueByIndex(row, 29);
-          const radioIdAE = this.getValueByIndex(row, 30);
-          const radioIdAF = this.getValueByIndex(row, 31);
-          const radioIdAG = this.getValueByIndex(row, 32);
+          const radioIdAD = rowData[29]?.toString() || '';
+          const radioIdAE = rowData[30]?.toString() || '';
+          const radioIdAF = rowData[31]?.toString() || '';
+          const radioIdAG = rowData[32]?.toString() || '';
 
           if (!colW?.trim() && !colX?.trim() && !colY?.trim() && !colZ?.trim()) {
             continue;

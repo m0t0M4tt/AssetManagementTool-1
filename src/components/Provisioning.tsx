@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, CheckCircle2, Circle, AlertCircle, TrendingUp, X } from 'lucide-react';
+import { Search, CheckCircle2, Circle, AlertCircle, TrendingUp, X, RefreshCw } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
 import { ProvisioningService } from '../lib/provisioningService';
@@ -8,11 +8,21 @@ import type { User, ProvisioningSteps } from '../lib/types';
 type FilterStatus = 'all' | 'completed' | 'in-progress' | 'not-started';
 
 export default function Provisioning() {
-  const { users, usersLoading: loading, usersError: error } = useData();
+  const { users, usersLoading: loading, usersError: error, refreshData } = useData();
   const { accessToken } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshData();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const filteredUsers = users.filter((user) => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -94,9 +104,23 @@ export default function Provisioning() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900">Provisioning Workflow</h1>
-        <p className="text-slate-600 mt-1">Track and manage user provisioning progress</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900">Provisioning Workflow</h1>
+          <p className="text-slate-600 mt-1">Track and manage user provisioning progress</p>
+        </div>
+        <button
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+            isRefreshing
+              ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
+          }`}
+        >
+          <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
+          {isRefreshing ? 'Refreshing...' : 'Refresh Data'}
+        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

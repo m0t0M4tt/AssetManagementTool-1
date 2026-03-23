@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { DataService } from '../lib/dataService';
 import { useAuth } from './AuthContext';
 import type { User, Device } from '../lib/types';
@@ -8,19 +8,12 @@ interface CacheEntry<T> {
   timestamp: number;
 }
 
-const CACHE_DURATION = 30000;
+// PERMANENT cache - data persists until manual refresh
 const cache = new Map<string, CacheEntry<unknown>>();
 
 function getCachedData<T>(key: string): T | null {
   const entry = cache.get(key) as CacheEntry<T> | undefined;
   if (!entry) return null;
-
-  const isExpired = Date.now() - entry.timestamp > CACHE_DURATION;
-  if (isExpired) {
-    cache.delete(key);
-    return null;
-  }
-
   return entry.data;
 }
 
@@ -29,6 +22,10 @@ function setCachedData<T>(key: string, data: T): void {
     data,
     timestamp: Date.now(),
   });
+}
+
+function clearCache(): void {
+  cache.clear();
 }
 
 interface DataContextType {
@@ -40,6 +37,7 @@ interface DataContextType {
   devicesError: string | null;
   loadUsers: () => Promise<User[]>;
   loadDevices: () => Promise<Device[]>;
+  refreshData: () => Promise<void>;
   addUser: (user: Omit<User, 'id'>) => Promise<User>;
   updateUser: (id: string, updates: Partial<User>) => Promise<void>;
   deleteUser: (id: string) => Promise<void>;
@@ -60,30 +58,44 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [hasFetched, setHasFetched] = useState(false);
   const { accessToken, logout, isAuthenticated } = useAuth();
 
+  // FETCH LOCK: Prevent duplicate/concurrent requests
+  const isFetchingUsers = useRef(false);
+  const isFetchingDevices = useRef(false);
+
   const handleTokenExpired = useCallback(() => {
     logout();
     window.location.href = '/';
   }, [logout]);
 
-  const loadUsers = useCallback(async () => {
+  const loadUsers = useCallback(async (forceRefresh: boolean = false) => {
     if (!accessToken) {
       setUsersLoading(false);
       return [];
     }
 
+    // FETCH LOCK: Prevent concurrent requests
+    if (isFetchingUsers.current) {
+      console.log('Users fetch already in progress, skipping...');
+      return users;
+    }
+
     const cacheKey = 'users';
     const cached = getCachedData<User[]>(cacheKey);
 
-    if (cached) {
+    // Use cache unless forced refresh
+    if (cached && !forceRefresh) {
+      console.log('Using cached users data');
       setUsers(cached);
       setUsersLoading(false);
       return cached;
     }
 
     try {
+      isFetchingUsers.current = true;
       setUsersLoading(true);
       setUsersError(null);
 
+      console.log('Fetching users from Google Sheets...');
       const userData = await DataService.fetchUsers(accessToken);
 
       setCachedData(cacheKey, userData);
@@ -101,28 +113,39 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return [];
     } finally {
       setUsersLoading(false);
+      isFetchingUsers.current = false;
     }
-  }, [accessToken, handleTokenExpired]);
+  }, [accessToken, handleTokenExpired, users]);
 
-  const loadDevices = useCallback(async () => {
+  const loadDevices = useCallback(async (forceRefresh: boolean = false) => {
     if (!accessToken) {
       setDevicesLoading(false);
       return [];
     }
 
+    // FETCH LOCK: Prevent concurrent requests
+    if (isFetchingDevices.current) {
+      console.log('Devices fetch already in progress, skipping...');
+      return devices;
+    }
+
     const cacheKey = 'devices';
     const cached = getCachedData<Device[]>(cacheKey);
 
-    if (cached) {
+    // Use cache unless forced refresh
+    if (cached && !forceRefresh) {
+      console.log('Using cached devices data');
       setDevices(cached);
       setDevicesLoading(false);
       return cached;
     }
 
     try {
+      isFetchingDevices.current = true;
       setDevicesLoading(true);
       setDevicesError(null);
 
+      console.log('Fetching devices from Google Sheets...');
       const deviceData = await DataService.fetchDevices(accessToken);
 
       setCachedData(cacheKey, deviceData);
@@ -140,8 +163,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return [];
     } finally {
       setDevicesLoading(false);
+      isFetchingDevices.current = false;
     }
-  }, [accessToken, handleTokenExpired]);
+  }, [accessToken, handleTokenExpired, devices]);
+
+  const refreshData = useCallback(async () => {
+    console.log('Manual refresh triggered - clearing cache and refetching data...');
+    clearCache();
+    await Promise.all([
+      loadUsers(true),
+      loadDevices(true)
+    ]);
+  }, [loadUsers, loadDevices]);
 
   const addUser = useCallback(async (user: Omit<User, 'id'>) => {
     if (!accessToken) {
@@ -150,8 +183,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     try {
       const newUser = await DataService.addUser(accessToken, user);
-      cache.delete('users');
-      await loadUsers();
+      clearCache();
+      await loadUsers(true);
       return newUser;
     } catch (err) {
       if (err instanceof Error && err.message === 'TOKEN_EXPIRED') {
@@ -169,8 +202,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     try {
       await DataService.updateUser(accessToken, id, updates);
-      cache.delete('users');
-      await loadUsers();
+      clearCache();
+      await loadUsers(true);
     } catch (err) {
       if (err instanceof Error && err.message === 'TOKEN_EXPIRED') {
         handleTokenExpired();
@@ -187,8 +220,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     try {
       await DataService.deleteUser(accessToken, id);
-      cache.delete('users');
-      await loadUsers();
+      clearCache();
+      await loadUsers(true);
     } catch (err) {
       if (err instanceof Error && err.message === 'TOKEN_EXPIRED') {
         handleTokenExpired();
@@ -205,8 +238,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     try {
       const newDevice = await DataService.addDevice(accessToken, device, sheetName);
-      cache.delete('devices');
-      await loadDevices();
+      clearCache();
+      await loadDevices(true);
       return newDevice;
     } catch (err) {
       if (err instanceof Error && err.message === 'TOKEN_EXPIRED') {
@@ -224,8 +257,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     try {
       await DataService.updateDevice(accessToken, id, updates);
-      cache.delete('devices');
-      await loadDevices();
+      clearCache();
+      await loadDevices(true);
     } catch (err) {
       if (err instanceof Error && err.message === 'TOKEN_EXPIRED') {
         handleTokenExpired();
@@ -242,8 +275,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     try {
       await DataService.deleteDevice(accessToken, id);
-      cache.delete('devices');
-      await loadDevices();
+      clearCache();
+      await loadDevices(true);
     } catch (err) {
       if (err instanceof Error && err.message === 'TOKEN_EXPIRED') {
         handleTokenExpired();
@@ -273,6 +306,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     devicesError,
     loadUsers,
     loadDevices,
+    refreshData,
     addUser,
     updateUser,
     deleteUser,

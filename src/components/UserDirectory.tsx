@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, Pencil, Trash2, X, CheckCircle2, Circle } from 'lucide-react';
+import { Search, Plus, Pencil, Trash2, X, CheckCircle2, Circle, RefreshCw } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import type { User } from '../lib/types';
 import UserDetailModal from './UserDetailModal';
@@ -7,7 +7,17 @@ import UserDetailModal from './UserDetailModal';
 const PROVISIONING_STORAGE_KEY = 'userProvisioningState';
 
 export default function UserDirectory() {
-  const { users, devices, usersLoading: loading, usersError: error, addUser, updateUser, deleteUser } = useData();
+  const { users, devices, usersLoading: loading, usersError: error, addUser, updateUser, deleteUser, refreshData } = useData();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshData();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTab, setSelectedTab] = useState<string>('all');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -146,13 +156,27 @@ export default function UserDirectory() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-slate-900">User Directory</h1>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Plus size={20} />
-          Add User
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+              isRefreshing
+                ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                : 'bg-slate-600 text-white hover:bg-slate-700'
+            }`}
+          >
+            <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+          </button>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus size={20} />
+            Add User
+          </button>
+        </div>
       </div>
 
       <div className="flex gap-4">

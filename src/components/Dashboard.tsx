@@ -1,10 +1,21 @@
-import { Package, Users, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Package, Users, CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import { useNavigate } from '../hooks/useNavigate';
+import { useState } from 'react';
 
 export default function Dashboard() {
-  const { users, devices, usersLoading, devicesLoading } = useData();
+  const { users, devices, usersLoading, devicesLoading, refreshData } = useData();
   const navigate = useNavigate();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshData();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const loading = usersLoading || devicesLoading;
 
@@ -46,7 +57,21 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
+        <button
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+            isRefreshing
+              ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
+          }`}
+        >
+          <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
+          {isRefreshing ? 'Refreshing...' : 'Refresh Data'}
+        </button>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
