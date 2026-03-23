@@ -53,20 +53,25 @@ export class DataService {
           const unit = this.getValueByIndex(row, 11);
           const alias = this.getValueByIndex(row, 12);
 
-          const radioW = this.getValueByIndex(row, 22);
-          const radioY = this.getValueByIndex(row, 24);
+          const colW = this.getValueByIndex(row, 22);
+          const colX = this.getValueByIndex(row, 23);
+          const colY = this.getValueByIndex(row, 24);
+          const colZ = this.getValueByIndex(row, 25);
 
-          if (radioW) {
-            const assetX = this.getValueByIndex(row, 23);
-            const radioIdAD = this.getValueByIndex(row, 29);
-            const radioIdAE = this.getValueByIndex(row, 30);
+          const radioIdAD = this.getValueByIndex(row, 29);
+          const radioIdAE = this.getValueByIndex(row, 30);
+          const radioIdAF = this.getValueByIndex(row, 31);
+          const radioIdAG = this.getValueByIndex(row, 32);
+
+          if (colW) {
             const combinedRadioId = [radioIdAD, radioIdAE].filter(Boolean).join(', ');
+            const uniqueId = `${colW}-APXNext`;
 
             this.extractedDevices.push({
-              id: crypto.randomUUID(),
-              serialNumber: radioW,
-              assetTag: assetX,
-              model: 'APX NEXT',
+              id: uniqueId,
+              serialNumber: colW,
+              assetTag: colW,
+              model: 'APX Next',
               category: 'Portable Radio',
               assignedTo: loginC,
               status: loginC ? 'assigned' : 'available',
@@ -80,26 +85,63 @@ export class DataService {
             });
           }
 
-          if (radioY) {
-            const assetZ = this.getValueByIndex(row, 25);
-            const radioIdAF = this.getValueByIndex(row, 31);
-            const radioIdAG = this.getValueByIndex(row, 32);
+          if (colX) {
             const combinedRadioId = [radioIdAF, radioIdAG].filter(Boolean).join(', ');
-
-            const model = loginH ? 'N70' : 'BWC (V700/SVX)';
-            const category = loginH ? 'LTE Radio' : 'Body Worn Camera';
+            const uniqueId = `${colX}-APXN70`;
 
             this.extractedDevices.push({
-              id: crypto.randomUUID(),
-              serialNumber: radioY,
-              assetTag: assetZ,
-              model: model,
-              category: category,
+              id: uniqueId,
+              serialNumber: colX,
+              assetTag: colX,
+              model: 'APX N70',
+              category: 'LTE Radio',
               assignedTo: loginH,
               status: loginH ? 'assigned' : 'available',
               location: tabName,
               notes: '',
               radioId: combinedRadioId,
+              owner: owner,
+              unit: unit,
+              alias: alias,
+              sourceTab: tabName,
+            });
+          }
+
+          if (colY) {
+            const uniqueId = `${colY}-V700`;
+
+            this.extractedDevices.push({
+              id: uniqueId,
+              serialNumber: colY,
+              assetTag: colY,
+              model: 'V700',
+              category: 'Body Worn Camera',
+              assignedTo: owner,
+              status: owner ? 'assigned' : 'available',
+              location: tabName,
+              notes: '',
+              radioId: '',
+              owner: owner,
+              unit: unit,
+              alias: alias,
+              sourceTab: tabName,
+            });
+          }
+
+          if (colZ) {
+            const uniqueId = `${colZ}-SVX`;
+
+            this.extractedDevices.push({
+              id: uniqueId,
+              serialNumber: colZ,
+              assetTag: colZ,
+              model: 'SVX',
+              category: 'Body Worn Camera',
+              assignedTo: owner,
+              status: owner ? 'assigned' : 'available',
+              location: tabName,
+              notes: '',
+              radioId: '',
               owner: owner,
               unit: unit,
               alias: alias,
@@ -123,7 +165,11 @@ export class DataService {
 
         console.log(`Tab ${tabName}: Successfully processed`);
       } catch (error) {
-        console.error(`CRITICAL ERROR in tab ${tabName}:`, error);
+        if (tabName === 'Presales') {
+          console.error(`ERROR: Presales tab not found or inaccessible:`, error);
+        } else {
+          console.error(`CRITICAL ERROR in tab ${tabName}:`, error);
+        }
         if (error instanceof Error) {
           console.error(`Error message: ${error.message}`);
           console.error(`Error stack: ${error.stack}`);

@@ -16,7 +16,9 @@ export default function Devices() {
       device.serialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       device.assetTag.toLowerCase().includes(searchTerm.toLowerCase()) ||
       device.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      device.assignedTo.toLowerCase().includes(searchTerm.toLowerCase());
+      device.assignedTo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (device.radioId && device.radioId.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (device.alias && device.alias.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const matchesStatus = filterStatus === 'all' || device.status === filterStatus;
     const matchesCategory = filterCategory === 'all' || device.category === filterCategory;
