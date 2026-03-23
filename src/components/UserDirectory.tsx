@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Search, Plus, Pencil, Trash2, X, CheckCircle2, Circle } from 'lucide-react';
-import { useUsers, useDevices } from '../hooks/useGoogleSheets';
+import { useData } from '../contexts/DataContext';
 import type { User } from '../lib/types';
 import UserDetailModal from './UserDetailModal';
 
 const PROVISIONING_STORAGE_KEY = 'userProvisioningState';
 
 export default function UserDirectory() {
-  const { users, loading, error, addUser, updateUser, deleteUser } = useUsers();
-  const { devices } = useDevices();
+  const { users, devices, usersLoading: loading, usersError: error, addUser, updateUser, deleteUser } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTab, setSelectedTab] = useState<string>('all');
   const [showAddModal, setShowAddModal] = useState(false);

@@ -1,10 +1,9 @@
 import { Package, Users, CheckCircle, AlertTriangle } from 'lucide-react';
-import { useUsers, useDevices } from '../hooks/useGoogleSheets';
+import { useData } from '../contexts/DataContext';
 import { useNavigate } from '../hooks/useNavigate';
 
 export default function Dashboard() {
-  const { users, loading: usersLoading } = useUsers();
-  const { devices, loading: devicesLoading } = useDevices();
+  const { users, devices, usersLoading, devicesLoading } = useData();
   const navigate = useNavigate();
 
   const loading = usersLoading || devicesLoading;
@@ -17,79 +16,83 @@ export default function Dashboard() {
     assignedDevices: devices.filter((d) => d.status === 'assigned').length,
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-slate-600">Loading dashboard...</div>
+  const StatCard = ({ title, value, icon: Icon, color, onClick, subtitle, isLoading }: {
+    title: string;
+    value: number;
+    icon: typeof Package;
+    color: string;
+    onClick: () => void;
+    subtitle: string | JSX.Element;
+    isLoading: boolean;
+  }) => (
+    <button
+      onClick={onClick}
+      className={`bg-white rounded-lg shadow-sm p-6 border-l-4 border-${color}-600 text-left hover:shadow-md transition-shadow cursor-pointer`}
+    >
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-slate-600">{title}</p>
+          {isLoading ? (
+            <p className="text-3xl font-bold text-slate-400 mt-2">Loading...</p>
+          ) : (
+            <p className="text-3xl font-bold text-slate-900 mt-2">{value}</p>
+          )}
+        </div>
+        <Icon className={`text-${color}-600`} size={40} />
       </div>
-    );
-  }
+      <div className="mt-4 text-sm text-slate-600">{subtitle}</div>
+    </button>
+  );
 
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <button
+        <StatCard
+          title="Total Users"
+          value={stats.totalUsers}
+          icon={Users}
+          color="blue"
           onClick={() => navigate('/directory')}
-          className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-blue-600 text-left hover:shadow-md transition-shadow cursor-pointer"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-600">Total Users</p>
-              <p className="text-3xl font-bold text-slate-900 mt-2">{stats.totalUsers}</p>
-            </div>
-            <Users className="text-blue-600" size={40} />
-          </div>
-          <div className="mt-4 text-sm text-slate-600">
-            <span className="text-green-600 font-medium">{stats.activeUsers}</span> active
-          </div>
-        </button>
+          subtitle={<><span className="text-green-600 font-medium">{stats.activeUsers}</span> active</>}
+          isLoading={usersLoading}
+        />
 
-        <button
+        <StatCard
+          title="Total Devices"
+          value={stats.totalDevices}
+          icon={Package}
+          color="green"
           onClick={() => navigate('/devices')}
-          className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-green-600 text-left hover:shadow-md transition-shadow cursor-pointer"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-600">Total Devices</p>
-              <p className="text-3xl font-bold text-slate-900 mt-2">{stats.totalDevices}</p>
-            </div>
-            <Package className="text-green-600" size={40} />
-          </div>
-          <div className="mt-4 text-sm text-slate-600">
-            <span className="text-green-600 font-medium">{stats.availableDevices}</span> available,{' '}
-            <span className="text-blue-600 font-medium">{stats.assignedDevices}</span> assigned
-          </div>
-        </button>
+          subtitle={
+            <>
+              <span className="text-green-600 font-medium">{stats.availableDevices}</span> available,{' '}
+              <span className="text-blue-600 font-medium">{stats.assignedDevices}</span> assigned
+            </>
+          }
+          isLoading={devicesLoading}
+        />
 
-        <button
+        <StatCard
+          title="Available Devices"
+          value={stats.availableDevices}
+          icon={AlertTriangle}
+          color="amber"
           onClick={() => navigate('/devices?filter=available')}
-          className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-amber-600 text-left hover:shadow-md transition-shadow cursor-pointer"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-600">Available Devices</p>
-              <p className="text-3xl font-bold text-slate-900 mt-2">{stats.availableDevices}</p>
-            </div>
-            <AlertTriangle className="text-amber-600" size={40} />
-          </div>
-          <div className="mt-4 text-sm text-slate-600">Ready for deployment</div>
-        </button>
+          subtitle="Ready for deployment"
+          isLoading={devicesLoading}
+        />
 
-        <button
+        <StatCard
+          title="Assigned Devices"
+          value={stats.assignedDevices}
+          icon={CheckCircle}
+          color="emerald"
           onClick={() => navigate('/devices?filter=assigned')}
-          className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-emerald-600 text-left hover:shadow-md transition-shadow cursor-pointer"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-600">Assigned Devices</p>
-              <p className="text-3xl font-bold text-slate-900 mt-2">{stats.assignedDevices}</p>
-            </div>
-            <CheckCircle className="text-emerald-600" size={40} />
-          </div>
-          <div className="mt-4 text-sm text-slate-600">Successfully deployed</div>
-        </button>
+          subtitle="Successfully deployed"
+          isLoading={devicesLoading}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

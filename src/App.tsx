@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { DataProvider } from './contexts/DataContext';
 import Sidebar, { PageType } from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import UserDirectory from './components/UserDirectory';
@@ -84,7 +85,9 @@ function App() {
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <AuthProvider>
-        <AppContent />
+        <DataProvider>
+          <AppContent />
+        </DataProvider>
       </AuthProvider>
     </GoogleOAuthProvider>
   );

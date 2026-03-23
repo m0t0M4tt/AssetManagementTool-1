@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Search, Plus, Pencil, Trash2, X } from 'lucide-react';
-import { useDevices } from '../hooks/useGoogleSheets';
+import { useData } from '../contexts/DataContext';
 import type { Device } from '../lib/types';
 
 export default function Devices() {
-  const { devices, loading, error, addDevice, updateDevice, deleteDevice } = useDevices();
+  const { devices, devicesLoading: loading, devicesError: error, addDevice, updateDevice, deleteDevice } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
