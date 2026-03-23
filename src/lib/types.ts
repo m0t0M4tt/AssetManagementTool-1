@@ -5,6 +5,7 @@ export interface User {
   department: string;
   status: string;
   hireDate: string;
+  sourceTab: string;
 }
 
 export interface Device {

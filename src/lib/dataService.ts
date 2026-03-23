@@ -7,22 +7,69 @@ export class DataService {
   }
 
   static async fetchUsers(accessToken: string): Promise<User[]> {
-    try {
-      const sheet = await this.getSheet(accessToken, 'Haas');
-      const rows = await sheet.getRows();
+    const targetTabs = [
+      'Haas',
+      'Presales',
+      'Central',
+      'Northeast',
+      'Southeast',
+      'West',
+      'Federal',
+      'Software'
+    ];
 
-      return rows.map(row => ({
-        id: row.get('CAD UNIT') || crypto.randomUUID(),
-        name: row.get('Owner') || '',
-        email: row.get('Login Email') || '',
-        department: row.get('Group') || '',
-        status: 'active',
-        hireDate: '',
-      }));
-    } catch (error) {
-      console.error('Error fetching users from Haas tab:', error);
-      throw error;
+    const allUsers: User[] = [];
+    const userMap = new Map<string, User>();
+
+    for (const tabName of targetTabs) {
+      try {
+        const sheet = await this.getSheet(accessToken, tabName);
+        const rows = await sheet.getRows();
+
+        for (const row of rows) {
+          const email = row.get('Login Email') || '';
+          const name = row.get('Owner') || '';
+          const group = row.get('Group') || tabName;
+          const cadUnit = row.get('CAD UNIT') || '';
+
+          // Skip empty rows
+          if (!email && !name) continue;
+
+          const userKey = email || name;
+
+          // Check for duplicates
+          if (userMap.has(userKey)) {
+            const existingUser = userMap.get(userKey)!;
+            // Merge: prefer non-empty values
+            existingUser.sourceTab = `${existingUser.sourceTab}, ${tabName}`;
+            if (!existingUser.id && cadUnit) existingUser.id = cadUnit;
+            if (!existingUser.name && name) existingUser.name = name;
+            if (!existingUser.email && email) existingUser.email = email;
+            if (!existingUser.department && group) existingUser.department = group;
+          } else {
+            // Add new user
+            const newUser: User = {
+              id: cadUnit || crypto.randomUUID(),
+              name: name,
+              email: email,
+              department: group,
+              status: 'active',
+              hireDate: '',
+              sourceTab: tabName,
+            };
+            userMap.set(userKey, newUser);
+            allUsers.push(newUser);
+          }
+        }
+
+        console.log(`Successfully loaded ${rows.length} rows from ${tabName} tab`);
+      } catch (error) {
+        console.warn(`Failed to load ${tabName} tab, skipping:`, error);
+      }
     }
+
+    console.log(`Total users loaded: ${allUsers.length}`);
+    return allUsers;
   }
 
   static async fetchDevices(accessToken: string): Promise<Device[]> {
@@ -76,11 +123,14 @@ export class DataService {
 
   static async addUser(accessToken: string, user: Omit<User, 'id'>): Promise<User> {
     try {
-      const sheet = await this.getSheet(accessToken, 'Haas');
+      // Default to adding to the sourceTab if provided, otherwise Haas
+      const targetTab = user.sourceTab || 'Haas';
+      const sheet = await this.getSheet(accessToken, targetTab);
 
       const newUser: User = {
         id: crypto.randomUUID(),
         ...user,
+        sourceTab: targetTab,
       };
 
       await sheet.addRow({
@@ -92,47 +142,77 @@ export class DataService {
 
       return newUser;
     } catch (error) {
-      console.error('Error adding user to Haas tab:', error);
+      console.error('Error adding user:', error);
       throw error;
     }
   }
 
   static async updateUser(accessToken: string, id: string, updates: Partial<User>): Promise<void> {
-    try {
-      const sheet = await this.getSheet(accessToken, 'Haas');
-      const rows = await sheet.getRows();
-      const row = rows.find(r => r.get('CAD UNIT') === id);
+    const targetTabs = [
+      'Haas',
+      'Presales',
+      'Central',
+      'Northeast',
+      'Southeast',
+      'West',
+      'Federal',
+      'Software'
+    ];
 
-      if (!row) {
-        throw new Error(`User with id ${id} not found`);
+    // Try to find the user across all tabs
+    for (const tabName of targetTabs) {
+      try {
+        const sheet = await this.getSheet(accessToken, tabName);
+        const rows = await sheet.getRows();
+        const row = rows.find(r => r.get('CAD UNIT') === id);
+
+        if (row) {
+          if (updates.name) row.set('Owner', updates.name);
+          if (updates.email) row.set('Login Email', updates.email);
+          if (updates.department) row.set('Group', updates.department);
+
+          await row.save();
+          console.log(`User ${id} updated in ${tabName} tab`);
+          return;
+        }
+      } catch (error) {
+        console.warn(`Error checking ${tabName} tab:`, error);
       }
-
-      if (updates.name) row.set('Owner', updates.name);
-      if (updates.email) row.set('Login Email', updates.email);
-      if (updates.department) row.set('Group', updates.department);
-
-      await row.save();
-    } catch (error) {
-      console.error('Error updating user in Haas tab:', error);
-      throw error;
     }
+
+    throw new Error(`User with id ${id} not found in any tab`);
   }
 
   static async deleteUser(accessToken: string, id: string): Promise<void> {
-    try {
-      const sheet = await this.getSheet(accessToken, 'Haas');
-      const rows = await sheet.getRows();
-      const row = rows.find(r => r.get('CAD UNIT') === id);
+    const targetTabs = [
+      'Haas',
+      'Presales',
+      'Central',
+      'Northeast',
+      'Southeast',
+      'West',
+      'Federal',
+      'Software'
+    ];
 
-      if (!row) {
-        throw new Error(`User with id ${id} not found`);
+    // Try to find and delete the user across all tabs
+    for (const tabName of targetTabs) {
+      try {
+        const sheet = await this.getSheet(accessToken, tabName);
+        const rows = await sheet.getRows();
+        const row = rows.find(r => r.get('CAD UNIT') === id);
+
+        if (row) {
+          await row.delete();
+          console.log(`User ${id} deleted from ${tabName} tab`);
+          return;
+        }
+      } catch (error) {
+        console.warn(`Error checking ${tabName} tab:`, error);
       }
-
-      await row.delete();
-    } catch (error) {
-      console.error('Error deleting user from Haas tab:', error);
-      throw error;
     }
+
+    throw new Error(`User with id ${id} not found in any tab`);
   }
 
   static async addDevice(accessToken: string, device: Omit<Device, 'id'>, targetTab: 'Presales' | 'Form Responses' = 'Presales'): Promise<Device> {

@@ -6,15 +6,24 @@ import type { User } from '../lib/types';
 export default function UserDirectory() {
   const { users, loading, error, addUser, updateUser, deleteUser } = useUsers();
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTab, setSelectedTab] = useState<string>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
-  const filteredUsers = users.filter(
-    (user) =>
+  // Get unique tabs for filter dropdown
+  const uniqueTabs = ['all', ...Array.from(new Set(users.map(u => u.sourceTab)))].filter(Boolean);
+
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch =
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.department.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+      user.department.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesTab =
+      selectedTab === 'all' || user.sourceTab.includes(selectedTab);
+
+    return matchesSearch && matchesTab;
+  });
 
   const handleAddUser = async (formData: FormData) => {
     const newUser = {
@@ -23,6 +32,7 @@ export default function UserDirectory() {
       department: formData.get('department') as string,
       status: formData.get('status') as string,
       hireDate: formData.get('hireDate') as string,
+      sourceTab: formData.get('sourceTab') as string || 'Haas',
     };
 
     try {
@@ -94,15 +104,30 @@ export default function UserDirectory() {
         </button>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-        <input
-          type="text"
-          placeholder="Search users..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+      <div className="flex gap-4">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+          <input
+            type="text"
+            placeholder="Search users..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div className="w-64">
+          <select
+            value={selectedTab}
+            onChange={(e) => setSelectedTab(e.target.value)}
+            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+          >
+            {uniqueTabs.map((tab) => (
+              <option key={tab} value={tab}>
+                {tab === 'all' ? 'All Regions' : `Region: ${tab}`}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
@@ -112,8 +137,8 @@ export default function UserDirectory() {
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Name</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Email</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Department</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Region</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Status</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Hire Date</th>
               <th className="px-6 py-3 text-right text-sm font-semibold text-slate-700">Actions</th>
             </tr>
           </thead>
@@ -123,6 +148,11 @@ export default function UserDirectory() {
                 <td className="px-6 py-4 text-sm font-medium text-slate-900">{user.name}</td>
                 <td className="px-6 py-4 text-sm text-slate-600">{user.email}</td>
                 <td className="px-6 py-4 text-sm text-slate-600">{user.department}</td>
+                <td className="px-6 py-4">
+                  <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                    {user.sourceTab}
+                  </span>
+                </td>
                 <td className="px-6 py-4">
                   <span
                     className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
@@ -134,7 +164,6 @@ export default function UserDirectory() {
                     {user.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-sm text-slate-600">{user.hireDate}</td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-2">
                     <button
@@ -259,9 +288,26 @@ function UserFormModal({ title, user, onSubmit, onClose }: UserFormModalProps) {
               type="date"
               name="hireDate"
               defaultValue={user?.hireDate}
-              required
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Region</label>
+            <select
+              name="sourceTab"
+              defaultValue={user?.sourceTab || 'Haas'}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="Haas">Haas</option>
+              <option value="Presales">Presales</option>
+              <option value="Central">Central</option>
+              <option value="Northeast">Northeast</option>
+              <option value="Southeast">Southeast</option>
+              <option value="West">West</option>
+              <option value="Federal">Federal</option>
+              <option value="Software">Software</option>
+            </select>
           </div>
 
           <div className="flex gap-3 pt-4">
