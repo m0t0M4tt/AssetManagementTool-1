@@ -64,9 +64,9 @@ export class DataService {
     for (let i = 0; i < tabs.length; i++) {
       const tabName = tabs[i];
 
-      // Add staggered delay between tabs to avoid rate limiting
+      // Add 300ms delay between tabs to avoid rate limiting (429 errors)
       if (i > 0) {
-        await delay(200);
+        await delay(300);
       }
 
       try {
@@ -148,7 +148,7 @@ export class DataService {
             continue;
           }
 
-          if (colW && colW.trim() && colW.length >= 3 && !deviceMap.has(colW)) {
+          if (colW && colW.trim() && colW.trim().length >= 4 && !deviceMap.has(colW)) {
             const radioIdsArray = [radioIdAD, radioIdAE].filter(Boolean);
             const combinedRadioId = radioIdsArray.join(', ');
             const { ecoId, chicagoId } = this.splitRadioIds(radioIdsArray);
@@ -176,7 +176,7 @@ export class DataService {
             this.extractedDevices.push(device);
           }
 
-          if (colX && colX.trim() && colX.length >= 3 && !deviceMap.has(colX)) {
+          if (colX && colX.trim() && colX.trim().length >= 4 && !deviceMap.has(colX)) {
             const radioIdsArray = [radioIdAF, radioIdAG].filter(Boolean);
             const combinedRadioId = radioIdsArray.join(', ');
             const { ecoId, chicagoId } = this.splitRadioIds(radioIdsArray);
@@ -204,7 +204,7 @@ export class DataService {
             this.extractedDevices.push(device);
           }
 
-          if (colY && colY.trim() && colY.length >= 3 && !deviceMap.has(colY)) {
+          if (colY && colY.trim() && colY.trim().length >= 4 && !deviceMap.has(colY)) {
             const uniqueId = `${colY}-V700`;
 
             const device: Device = {
@@ -229,7 +229,7 @@ export class DataService {
             this.extractedDevices.push(device);
           }
 
-          if (colZ && colZ.trim() && colZ.length >= 3 && !deviceMap.has(colZ)) {
+          if (colZ && colZ.trim() && colZ.trim().length >= 4 && !deviceMap.has(colZ)) {
             const uniqueId = `${colZ}-SVX`;
 
             const device: Device = {
@@ -346,9 +346,9 @@ export class DataService {
     for (let i = 0; i < tabs.length; i++) {
       const tabName = tabs[i];
 
-      // Add staggered delay between tabs to avoid rate limiting
+      // Add 300ms delay between tabs to avoid rate limiting (429 errors)
       if (i > 0) {
-        await delay(200);
+        await delay(300);
       }
 
       try {
@@ -387,7 +387,7 @@ export class DataService {
             continue;
           }
 
-          if (colW && colW.trim() && colW.length >= 3 && !deviceMap.has(colW)) {
+          if (colW && colW.trim() && colW.trim().length >= 4 && !deviceMap.has(colW)) {
             const radioIdsArray = [radioIdAD, radioIdAE].filter(Boolean);
             const combinedRadioId = radioIdsArray.join(', ');
             const { ecoId, chicagoId } = this.splitRadioIds(radioIdsArray);
@@ -415,7 +415,7 @@ export class DataService {
             allDevices.push(device);
           }
 
-          if (colX && colX.trim() && colX.length >= 3 && !deviceMap.has(colX)) {
+          if (colX && colX.trim() && colX.trim().length >= 4 && !deviceMap.has(colX)) {
             const radioIdsArray = [radioIdAF, radioIdAG].filter(Boolean);
             const combinedRadioId = radioIdsArray.join(', ');
             const { ecoId, chicagoId } = this.splitRadioIds(radioIdsArray);
@@ -443,7 +443,7 @@ export class DataService {
             allDevices.push(device);
           }
 
-          if (colY && colY.trim() && colY.length >= 3 && !deviceMap.has(colY)) {
+          if (colY && colY.trim() && colY.trim().length >= 4 && !deviceMap.has(colY)) {
             const uniqueId = `${colY}-V700`;
 
             const device: Device = {
@@ -468,7 +468,7 @@ export class DataService {
             allDevices.push(device);
           }
 
-          if (colZ && colZ.trim() && colZ.length >= 3 && !deviceMap.has(colZ)) {
+          if (colZ && colZ.trim() && colZ.trim().length >= 4 && !deviceMap.has(colZ)) {
             const uniqueId = `${colZ}-SVX`;
 
             const device: Device = {

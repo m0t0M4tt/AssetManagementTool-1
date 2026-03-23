@@ -101,34 +101,44 @@ export default function UserDetailModal({ user, devices, provisioningSteps, onCl
           )}
 
           {(user.apxNextLogin || user.apxN70Login || user.apxNextUnitId || user.apxN70UnitId) && (
-            <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+            <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-200">
               <h3 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                <Radio size={20} className="text-green-600" />
+                <Radio size={20} className="text-emerald-600" />
                 CommandCentral Login Information
               </h3>
-              <div className="grid grid-cols-2 gap-4">
-                {user.apxNextLogin && (
-                  <div>
-                    <p className="text-sm font-medium text-slate-600">APX Next Login</p>
-                    <p className="text-slate-900 font-mono mt-1">{user.apxNextLogin}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {(user.apxNextLogin || user.apxNextUnitId) && (
+                  <div className="bg-white rounded-lg p-3 border border-emerald-200">
+                    <p className="text-xs font-semibold text-emerald-700 uppercase mb-2">APX Next</p>
+                    {user.apxNextLogin && (
+                      <div className="mb-2">
+                        <p className="text-xs font-medium text-slate-500">Login (Column C)</p>
+                        <p className="text-slate-900 font-mono text-sm mt-0.5">{user.apxNextLogin}</p>
+                      </div>
+                    )}
+                    {user.apxNextUnitId && (
+                      <div>
+                        <p className="text-xs font-medium text-slate-500">Unit ID (Column N)</p>
+                        <p className="text-slate-900 font-mono text-sm mt-0.5">{user.apxNextUnitId}</p>
+                      </div>
+                    )}
                   </div>
                 )}
-                {user.apxN70Login && (
-                  <div>
-                    <p className="text-sm font-medium text-slate-600">APX N70 Login</p>
-                    <p className="text-slate-900 font-mono mt-1">{user.apxN70Login}</p>
-                  </div>
-                )}
-                {user.apxNextUnitId && (
-                  <div>
-                    <p className="text-sm font-medium text-slate-600">APX Next Unit ID</p>
-                    <p className="text-slate-900 font-mono mt-1">{user.apxNextUnitId}</p>
-                  </div>
-                )}
-                {user.apxN70UnitId && (
-                  <div>
-                    <p className="text-sm font-medium text-slate-600">APX N70 Unit ID</p>
-                    <p className="text-slate-900 font-mono mt-1">{user.apxN70UnitId}</p>
+                {(user.apxN70Login || user.apxN70UnitId) && (
+                  <div className="bg-white rounded-lg p-3 border border-emerald-200">
+                    <p className="text-xs font-semibold text-emerald-700 uppercase mb-2">APX N70</p>
+                    {user.apxN70Login && (
+                      <div className="mb-2">
+                        <p className="text-xs font-medium text-slate-500">Login (Column H)</p>
+                        <p className="text-slate-900 font-mono text-sm mt-0.5">{user.apxN70Login}</p>
+                      </div>
+                    )}
+                    {user.apxN70UnitId && (
+                      <div>
+                        <p className="text-xs font-medium text-slate-500">Unit ID (Column O)</p>
+                        <p className="text-slate-900 font-mono text-sm mt-0.5">{user.apxN70UnitId}</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -160,18 +170,6 @@ export default function UserDetailModal({ user, devices, provisioningSteps, onCl
                             <span className="text-slate-500">Serial Number:</span>
                             <span className="ml-2 font-medium text-slate-900">{device.serialNumber}</span>
                           </div>
-                          {device.assetTag && (
-                            <div>
-                              <span className="text-slate-500">Asset Tag:</span>
-                              <span className="ml-2 font-medium text-slate-900">{device.assetTag}</span>
-                            </div>
-                          )}
-                          {device.location && (
-                            <div>
-                              <span className="text-slate-500">Location:</span>
-                              <span className="ml-2 font-medium text-slate-900">{device.location}</span>
-                            </div>
-                          )}
                           <div>
                             <span className="text-slate-500">Status:</span>
                             <span className={`ml-2 px-2 py-0.5 text-xs font-medium rounded-full ${
@@ -186,22 +184,31 @@ export default function UserDetailModal({ user, devices, provisioningSteps, onCl
                               {device.status}
                             </span>
                           </div>
+                          {device.location && (
+                            <div className="col-span-2">
+                              <span className="text-slate-500">Location:</span>
+                              <span className="ml-2 font-medium text-slate-900">{device.location}</span>
+                            </div>
+                          )}
                           {device.radioId && (
-                            <div className="col-span-2 mt-2 pt-2 border-t border-slate-200">
-                              <span className="text-slate-500">Radio IDs:</span>
-                              <span className="ml-2 font-mono text-slate-900">{device.radioId}</span>
-                            </div>
-                          )}
-                          {device.ecoId && (
-                            <div>
-                              <span className="text-slate-500">ECO ID:</span>
-                              <span className="ml-2 font-mono text-green-700">{device.ecoId}</span>
-                            </div>
-                          )}
-                          {device.chicagoId && (
-                            <div>
-                              <span className="text-slate-500">Chicago ID:</span>
-                              <span className="ml-2 font-mono text-blue-700">{device.chicagoId}</span>
+                            <div className="col-span-2 mt-2 pt-2 border-t border-slate-200 bg-slate-50 -mx-4 -mb-4 px-4 py-2 rounded-b-lg">
+                              <p className="text-xs font-semibold text-slate-600 uppercase mb-1">
+                                Radio IDs {device.model === 'APX Next' ? '(Columns AD-AE)' : device.model === 'APX N70' ? '(Columns AF-AG)' : ''}
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {device.ecoId && (
+                                  <div className="bg-green-100 px-2 py-1 rounded border border-green-200">
+                                    <span className="text-xs text-green-700 font-medium">ECO (1C1):</span>
+                                    <span className="ml-1 font-mono text-sm text-green-900">{device.ecoId}</span>
+                                  </div>
+                                )}
+                                {device.chicagoId && (
+                                  <div className="bg-blue-100 px-2 py-1 rounded border border-blue-200">
+                                    <span className="text-xs text-blue-700 font-medium">Chicago (040):</span>
+                                    <span className="ml-1 font-mono text-sm text-blue-900">{device.chicagoId}</span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           )}
                         </div>
@@ -261,7 +268,7 @@ export default function UserDetailModal({ user, devices, provisioningSteps, onCl
           <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
             <h3 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
               <CheckCircle2 size={20} className="text-green-600" />
-              Provisioning Status
+              Provisioning Progress (SET Checklist - Columns AM-BJ)
             </h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between bg-white px-4 py-3 rounded-lg border border-slate-200">
