@@ -2,8 +2,8 @@ import { getGoogleSheetDoc } from './googleSheets';
 import type { User, Device } from './types';
 
 export class DataService {
-  private static async getSheet(tabName: string) {
-    const doc = await getGoogleSheetDoc();
+  private static async getSheet(accessToken: string, tabName: string) {
+    const doc = await getGoogleSheetDoc(accessToken);
     const sheet = doc.sheetsByTitle[tabName];
 
     if (!sheet) {
@@ -13,9 +13,9 @@ export class DataService {
     return sheet;
   }
 
-  static async fetchUsers(): Promise<User[]> {
+  static async fetchUsers(accessToken: string): Promise<User[]> {
     try {
-      const sheet = await this.getSheet('Directory');
+      const sheet = await this.getSheet(accessToken, 'Directory');
       const rows = await sheet.getRows();
 
       return rows.map(row => ({
@@ -32,11 +32,11 @@ export class DataService {
     }
   }
 
-  static async fetchDevices(): Promise<Device[]> {
+  static async fetchDevices(accessToken: string): Promise<Device[]> {
     try {
       const allDevices: Device[] = [];
 
-      const presalesSheet = await this.getSheet('Presales').catch(() => null);
+      const presalesSheet = await this.getSheet(accessToken, 'Presales').catch(() => null);
       if (presalesSheet) {
         const rows = await presalesSheet.getRows();
         const devices = rows.map(row => ({
@@ -52,7 +52,7 @@ export class DataService {
         allDevices.push(...devices);
       }
 
-      const formResponsesSheet = await this.getSheet('Form Responses').catch(() => null);
+      const formResponsesSheet = await this.getSheet(accessToken, 'Form Responses').catch(() => null);
       if (formResponsesSheet) {
         const rows = await formResponsesSheet.getRows();
         const devices = rows.map(row => ({
@@ -75,9 +75,9 @@ export class DataService {
     }
   }
 
-  static async addUser(user: Omit<User, 'id'>): Promise<User> {
+  static async addUser(accessToken: string, user: Omit<User, 'id'>): Promise<User> {
     try {
-      const sheet = await this.getSheet('Directory');
+      const sheet = await this.getSheet(accessToken, 'Directory');
 
       const newUser: User = {
         id: crypto.randomUUID(),
@@ -100,9 +100,9 @@ export class DataService {
     }
   }
 
-  static async updateUser(id: string, updates: Partial<User>): Promise<void> {
+  static async updateUser(accessToken: string, id: string, updates: Partial<User>): Promise<void> {
     try {
-      const sheet = await this.getSheet('Directory');
+      const sheet = await this.getSheet(accessToken, 'Directory');
       const rows = await sheet.getRows();
       const row = rows.find(r => r.get('id') === id);
 
@@ -123,9 +123,9 @@ export class DataService {
     }
   }
 
-  static async deleteUser(id: string): Promise<void> {
+  static async deleteUser(accessToken: string, id: string): Promise<void> {
     try {
-      const sheet = await this.getSheet('Directory');
+      const sheet = await this.getSheet(accessToken, 'Directory');
       const rows = await sheet.getRows();
       const row = rows.find(r => r.get('id') === id);
 
@@ -140,9 +140,9 @@ export class DataService {
     }
   }
 
-  static async addDevice(device: Omit<Device, 'id'>, targetTab: 'Presales' | 'Form Responses' = 'Presales'): Promise<Device> {
+  static async addDevice(accessToken: string, device: Omit<Device, 'id'>, targetTab: 'Presales' | 'Form Responses' = 'Presales'): Promise<Device> {
     try {
-      const sheet = await this.getSheet(targetTab);
+      const sheet = await this.getSheet(accessToken, targetTab);
 
       const newDevice: Device = {
         id: crypto.randomUUID(),
@@ -167,10 +167,10 @@ export class DataService {
     }
   }
 
-  static async updateDevice(id: string, updates: Partial<Device>): Promise<void> {
+  static async updateDevice(accessToken: string, id: string, updates: Partial<Device>): Promise<void> {
     try {
       for (const tabName of ['Presales', 'Form Responses']) {
-        const sheet = await this.getSheet(tabName).catch(() => null);
+        const sheet = await this.getSheet(accessToken, tabName).catch(() => null);
         if (!sheet) continue;
 
         const rows = await sheet.getRows();
@@ -195,10 +195,10 @@ export class DataService {
     }
   }
 
-  static async deleteDevice(id: string): Promise<void> {
+  static async deleteDevice(accessToken: string, id: string): Promise<void> {
     try {
       for (const tabName of ['Presales', 'Form Responses']) {
-        const sheet = await this.getSheet(tabName).catch(() => null);
+        const sheet = await this.getSheet(accessToken, tabName).catch(() => null);
         if (!sheet) continue;
 
         const rows = await sheet.getRows();

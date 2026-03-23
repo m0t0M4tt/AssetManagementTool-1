@@ -1,11 +1,36 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Sidebar, { PageType } from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import UserDirectory from './components/UserDirectory';
 import Devices from './components/Devices';
+import { Login } from './components/Login';
 
-function App() {
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+function AppContent() {
   const [currentPage, setCurrentPage] = useState<PageType>('dashboard');
+  const { isAuthenticated } = useAuth();
+  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  if (!isAuthenticated) {
+    return <Login />;
+  }
+
+  if (currentPath === '/' || currentPath === '/login') {
+    window.history.replaceState({}, '', '/dashboard');
+    setCurrentPath('/dashboard');
+  }
 
   function renderPage() {
     switch (currentPage) {
@@ -25,6 +50,29 @@ function App() {
       <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
       <main className="flex-1 overflow-y-auto p-8">{renderPage()}</main>
     </div>
+  );
+}
+
+function App() {
+  if (!GOOGLE_CLIENT_ID) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-100">
+        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Configuration Error</h1>
+          <p className="text-slate-700">
+            Missing VITE_GOOGLE_CLIENT_ID in environment variables.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </GoogleOAuthProvider>
   );
 }
 
