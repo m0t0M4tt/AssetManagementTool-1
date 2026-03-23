@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Plus, Pencil, Trash2, X, CheckCircle2, Circle } from 'lucide-react';
 import { useUsers } from '../hooks/useGoogleSheets';
 import type { User } from '../lib/types';
+
+const PROVISIONING_STORAGE_KEY = 'userProvisioningState';
 
 export default function UserDirectory() {
   const { users, loading, error, addUser, updateUser, deleteUser } = useUsers();
@@ -9,7 +11,18 @@ export default function UserDirectory() {
   const [selectedTab, setSelectedTab] = useState<string>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [userProvisioningState, setUserProvisioningState] = useState<Map<string, User['provisioningSteps']>>(new Map());
+  const [userProvisioningState, setUserProvisioningState] = useState<Map<string, User['provisioningSteps']>>(() => {
+    try {
+      const saved = localStorage.getItem(PROVISIONING_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return new Map(Object.entries(parsed));
+      }
+    } catch (error) {
+      console.error('Failed to load provisioning state from localStorage:', error);
+    }
+    return new Map();
+  });
 
   // Get unique tabs for filter dropdown
   const uniqueTabs = ['all', ...Array.from(new Set(users.map(u => u.sourceTab)))].filter(Boolean);
@@ -75,6 +88,15 @@ export default function UserDirectory() {
       alert('Failed to delete user. Please try again.');
     }
   };
+
+  useEffect(() => {
+    try {
+      const stateObj = Object.fromEntries(userProvisioningState);
+      localStorage.setItem(PROVISIONING_STORAGE_KEY, JSON.stringify(stateObj));
+    } catch (error) {
+      console.error('Failed to save provisioning state to localStorage:', error);
+    }
+  }, [userProvisioningState]);
 
   const toggleProvisioningStep = (userId: string, step: 'stage' | 'enroll' | 'test') => {
     const currentSteps = userProvisioningState.get(userId) || {

@@ -155,6 +155,7 @@ export default function Devices() {
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Serial Number</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Model</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Category</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">System</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Assigned To</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Radio ID</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Status</th>
@@ -164,10 +165,25 @@ export default function Devices() {
           </thead>
           <tbody className="divide-y divide-slate-200">
             {filteredDevices.map((device) => (
-              <tr key={device.id} className="hover:bg-slate-50 transition-colors">
+              <tr key={device.serialNumber} className="hover:bg-slate-50 transition-colors">
                 <td className="px-6 py-4 text-sm font-medium text-slate-900">{device.serialNumber}</td>
                 <td className="px-6 py-4 text-sm text-slate-600">{device.model}</td>
                 <td className="px-6 py-4 text-sm text-slate-600">{device.category}</td>
+                <td className="px-6 py-4">
+                  <span
+                    className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                      device.systemName === 'ECO (1C1)'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : device.systemName === 'Chicago (040)'
+                        ? 'bg-sky-100 text-sky-800'
+                        : device.systemName === 'N/A'
+                        ? 'bg-slate-100 text-slate-500'
+                        : 'bg-amber-100 text-amber-800'
+                    }`}
+                  >
+                    {device.systemName || '-'}
+                  </span>
+                </td>
                 <td className="px-6 py-4 text-sm text-slate-600">{device.assignedTo || '-'}</td>
                 <td className="px-6 py-4 text-sm text-slate-600">{device.radioId || '-'}</td>
                 <td className="px-6 py-4">

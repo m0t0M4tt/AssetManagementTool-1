@@ -23,6 +23,20 @@ export class DataService {
     }
   }
 
+  private static identifySystem(radioIds: string[]): string {
+    for (const radioId of radioIds) {
+      if (!radioId) continue;
+
+      if (radioId.startsWith('15')) {
+        return 'ECO (1C1)';
+      }
+      if (radioId.startsWith('437')) {
+        return 'Chicago (040)';
+      }
+    }
+    return 'Unknown/Other';
+  }
+
   private static extractedDevices: Device[] = [];
 
   static async fetchUsers(accessToken: string): Promise<User[]> {
@@ -66,7 +80,9 @@ export class DataService {
           const radioIdAG = this.getValueByIndex(row, 32);
 
           if (colW && !deviceMap.has(colW)) {
-            const combinedRadioId = [radioIdAD, radioIdAE].filter(Boolean).join(', ');
+            const radioIdsArray = [radioIdAD, radioIdAE].filter(Boolean);
+            const combinedRadioId = radioIdsArray.join(', ');
+            const systemName = this.identifySystem(radioIdsArray);
             const uniqueId = `${colW}-APXNext`;
 
             const device: Device = {
@@ -80,6 +96,7 @@ export class DataService {
               location: tabName,
               notes: '',
               radioId: combinedRadioId,
+              systemName: systemName,
               owner: owner,
               unit: unit,
               alias: alias,
@@ -90,7 +107,9 @@ export class DataService {
           }
 
           if (colX && !deviceMap.has(colX)) {
-            const combinedRadioId = [radioIdAF, radioIdAG].filter(Boolean).join(', ');
+            const radioIdsArray = [radioIdAF, radioIdAG].filter(Boolean);
+            const combinedRadioId = radioIdsArray.join(', ');
+            const systemName = this.identifySystem(radioIdsArray);
             const uniqueId = `${colX}-APXN70`;
 
             const device: Device = {
@@ -104,6 +123,7 @@ export class DataService {
               location: tabName,
               notes: '',
               radioId: combinedRadioId,
+              systemName: systemName,
               owner: owner,
               unit: unit,
               alias: alias,
@@ -127,6 +147,7 @@ export class DataService {
               location: tabName,
               notes: '',
               radioId: '',
+              systemName: 'N/A',
               owner: owner,
               unit: unit,
               alias: alias,
@@ -150,6 +171,7 @@ export class DataService {
               location: tabName,
               notes: '',
               radioId: '',
+              systemName: 'N/A',
               owner: owner,
               unit: unit,
               alias: alias,
@@ -218,8 +240,17 @@ export class DataService {
   }
 
   static async fetchDevices(accessToken: string): Promise<Device[]> {
-    console.log(`Returning ${this.extractedDevices.length} devices extracted from tabs`);
-    return [...this.extractedDevices];
+    const deviceMap = new Map<string, Device>();
+
+    for (const device of this.extractedDevices) {
+      if (!deviceMap.has(device.serialNumber)) {
+        deviceMap.set(device.serialNumber, device);
+      }
+    }
+
+    const deduplicatedDevices = Array.from(deviceMap.values());
+    console.log(`Returning ${deduplicatedDevices.length} deduplicated devices (from ${this.extractedDevices.length} total)`);
+    return deduplicatedDevices;
   }
 
   static async addUser(accessToken: string, user: Omit<User, 'id'>): Promise<User> {
