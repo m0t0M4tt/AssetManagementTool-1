@@ -20,10 +20,10 @@ export class DataService {
 
       return rows.map(row => ({
         id: row.get('id') || crypto.randomUUID(),
-        name: row.get('name') || '',
-        email: row.get('email') || '',
-        department: row.get('department') || '',
-        status: row.get('status') || 'active',
+        name: row.get('Name') || '',
+        email: row.get('Email') || '',
+        department: row.get('Department') || '',
+        status: row.get('Status') || 'active',
         hireDate: row.get('hireDate') || '',
       }));
     } catch (error) {
@@ -41,10 +41,10 @@ export class DataService {
         const rows = await presalesSheet.getRows();
         const devices = rows.map(row => ({
           id: row.get('id') || crypto.randomUUID(),
-          serialNumber: row.get('serialNumber') || '',
+          serialNumber: row.get('Serial Number') || '',
           assetTag: row.get('assetTag') || '',
-          model: row.get('model') || '',
-          assignedTo: row.get('assignedTo') || '',
+          model: row.get('Model') || '',
+          assignedTo: row.get('Assigned To') || '',
           status: row.get('status') || 'available',
           location: row.get('location') || '',
           notes: row.get('notes') || '',
@@ -57,10 +57,10 @@ export class DataService {
         const rows = await formResponsesSheet.getRows();
         const devices = rows.map(row => ({
           id: row.get('id') || crypto.randomUUID(),
-          serialNumber: row.get('serialNumber') || '',
+          serialNumber: row.get('Serial Number') || '',
           assetTag: row.get('assetTag') || '',
-          model: row.get('model') || '',
-          assignedTo: row.get('assignedTo') || '',
+          model: row.get('Model') || '',
+          assignedTo: row.get('Assigned To') || '',
           status: row.get('status') || 'available',
           location: row.get('location') || '',
           notes: row.get('notes') || '',
@@ -86,10 +86,10 @@ export class DataService {
 
       await sheet.addRow({
         id: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        department: newUser.department,
-        status: newUser.status,
+        Name: newUser.name,
+        Email: newUser.email,
+        Department: newUser.department,
+        Status: newUser.status,
         hireDate: newUser.hireDate,
       });
 
@@ -151,10 +151,10 @@ export class DataService {
 
       await sheet.addRow({
         id: newDevice.id,
-        serialNumber: newDevice.serialNumber,
+        'Serial Number': newDevice.serialNumber,
         assetTag: newDevice.assetTag,
-        model: newDevice.model,
-        assignedTo: newDevice.assignedTo,
+        Model: newDevice.model,
+        'Assigned To': newDevice.assignedTo,
         status: newDevice.status,
         location: newDevice.location,
         notes: newDevice.notes,
