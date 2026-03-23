@@ -96,7 +96,7 @@ export default function Devices() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-slate-600">Loading devices...</div>
+        <div className="text-lg text-slate-600">Searching for devices...</div>
       </div>
     );
   }
@@ -223,9 +223,9 @@ export default function Devices() {
           </tbody>
         </table>
 
-        {filteredDevices.length === 0 && (
+        {filteredDevices.length === 0 && !loading && (
           <div className="text-center py-12 text-slate-500">
-            {searchTerm || filterStatus !== 'all' ? 'No devices found matching your filters.' : 'No devices found.'}
+            {searchTerm || filterStatus !== 'all' ? 'No devices found matching your filters.' : 'No devices found. Please check the console for data extraction logs.'}
           </div>
         )}
       </div>

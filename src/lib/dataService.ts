@@ -92,7 +92,7 @@ export class DataService {
             continue;
           }
 
-          if (colW && colW.trim() && !deviceMap.has(colW)) {
+          if (colW && colW.trim() && colW.length >= 3 && !deviceMap.has(colW)) {
             const radioIdsArray = [radioIdAD, radioIdAE].filter(Boolean);
             const combinedRadioId = radioIdsArray.join(', ');
             const { ecoId, chicagoId } = this.splitRadioIds(radioIdsArray);
@@ -120,7 +120,7 @@ export class DataService {
             this.extractedDevices.push(device);
           }
 
-          if (colX && colX.trim() && !deviceMap.has(colX)) {
+          if (colX && colX.trim() && colX.length >= 3 && !deviceMap.has(colX)) {
             const radioIdsArray = [radioIdAF, radioIdAG].filter(Boolean);
             const combinedRadioId = radioIdsArray.join(', ');
             const { ecoId, chicagoId } = this.splitRadioIds(radioIdsArray);
@@ -148,7 +148,7 @@ export class DataService {
             this.extractedDevices.push(device);
           }
 
-          if (colY && colY.trim() && !deviceMap.has(colY)) {
+          if (colY && colY.trim() && colY.length >= 3 && !deviceMap.has(colY)) {
             const uniqueId = `${colY}-V700`;
 
             const device: Device = {
@@ -173,7 +173,7 @@ export class DataService {
             this.extractedDevices.push(device);
           }
 
-          if (colZ && colZ.trim() && !deviceMap.has(colZ)) {
+          if (colZ && colZ.trim() && colZ.length >= 3 && !deviceMap.has(colZ)) {
             const uniqueId = `${colZ}-SVX`;
 
             const device: Device = {

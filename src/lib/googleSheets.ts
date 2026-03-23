@@ -49,7 +49,7 @@ export async function getSheetWithCustomHeader(
   }
 
   try {
-    await sheet.loadCells('A:AG');
+    await sheet.loadCells('A1:AG500');
     await sheet.loadHeaderRow(HEADER_ROW_INDEX);
 
     const headers = sheet.headerValues;
