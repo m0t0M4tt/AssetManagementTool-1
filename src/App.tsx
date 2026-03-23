@@ -8,6 +8,7 @@ import UserDirectory from './components/UserDirectory';
 import Devices from './components/Devices';
 import Provisioning from './components/Provisioning';
 import { Login } from './components/Login';
+import SessionExpirationWarning from './components/SessionExpirationWarning';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -69,6 +70,7 @@ function AppContent() {
         setCurrentPath(path);
       }} />
       <main className="flex-1 overflow-y-auto p-8">{renderPage()}</main>
+      <SessionExpirationWarning />
     </div>
   );
 }

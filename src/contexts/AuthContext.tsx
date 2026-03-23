@@ -1,12 +1,19 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
+const SESSION_DURATION = 12 * 60 * 60 * 1000; // 12 hours in milliseconds
+const WARNING_THRESHOLD = 5 * 60 * 1000; // 5 minutes before expiration
+
 interface AuthContextType {
   accessToken: string | null;
   userEmail: string | null;
   isAuthenticated: boolean;
+  sessionExpiresAt: number | null;
+  timeRemaining: number | null;
+  showExpirationWarning: boolean;
   setAccessToken: (token: string | null) => void;
   setUserEmail: (email: string | null) => void;
   logout: () => void;
+  extendSession: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,13 +29,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [userEmail, setUserEmailState] = useState<string | null>(() => {
     return sessionStorage.getItem('user_email');
   });
+  const [sessionExpiresAt, setSessionExpiresAt] = useState<number | null>(() => {
+    const stored = sessionStorage.getItem('session_expires_at');
+    return stored ? parseInt(stored, 10) : null;
+  });
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+  const [showExpirationWarning, setShowExpirationWarning] = useState(false);
 
   const setAccessToken = (token: string | null) => {
     setAccessTokenState(token);
     if (token) {
       sessionStorage.setItem('google_access_token', token);
+      const expiresAt = Date.now() + SESSION_DURATION;
+      setSessionExpiresAt(expiresAt);
+      sessionStorage.setItem('session_expires_at', expiresAt.toString());
     } else {
       sessionStorage.removeItem('google_access_token');
+      sessionStorage.removeItem('session_expires_at');
+      setSessionExpiresAt(null);
     }
   };
 
@@ -45,7 +63,46 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setAccessToken(null);
     setUserEmail(null);
     sessionStorage.clear();
+    setShowExpirationWarning(false);
   };
+
+  const extendSession = () => {
+    if (accessToken) {
+      const expiresAt = Date.now() + SESSION_DURATION;
+      setSessionExpiresAt(expiresAt);
+      sessionStorage.setItem('session_expires_at', expiresAt.toString());
+      setShowExpirationWarning(false);
+    }
+  };
+
+  // Update time remaining every second
+  useEffect(() => {
+    if (!sessionExpiresAt) {
+      setTimeRemaining(null);
+      return;
+    }
+
+    const updateTimer = () => {
+      const remaining = sessionExpiresAt - Date.now();
+
+      if (remaining <= 0) {
+        logout();
+        return;
+      }
+
+      setTimeRemaining(remaining);
+
+      // Show warning if within threshold
+      if (remaining <= WARNING_THRESHOLD && !showExpirationWarning) {
+        setShowExpirationWarning(true);
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(interval);
+  }, [sessionExpiresAt, showExpirationWarning]);
 
   const isAuthenticated = !!accessToken;
 
@@ -55,9 +112,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         accessToken,
         userEmail,
         isAuthenticated,
+        sessionExpiresAt,
+        timeRemaining,
+        showExpirationWarning,
         setAccessToken,
         setUserEmail,
         logout,
+        extendSession,
       }}
     >
       {children}
