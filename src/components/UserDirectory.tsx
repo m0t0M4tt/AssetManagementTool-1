@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react';
 import { Search, Plus, Pencil, Trash2, X, CheckCircle2, Circle } from 'lucide-react';
-import { useUsers } from '../hooks/useGoogleSheets';
+import { useUsers, useDevices } from '../hooks/useGoogleSheets';
 import type { User } from '../lib/types';
+import UserDetailModal from './UserDetailModal';
 
 const PROVISIONING_STORAGE_KEY = 'userProvisioningState';
 
 export default function UserDirectory() {
   const { users, loading, error, addUser, updateUser, deleteUser } = useUsers();
+  const { devices } = useDevices();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTab, setSelectedTab] = useState<string>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [viewingUser, setViewingUser] = useState<User | null>(null);
   const [userProvisioningState, setUserProvisioningState] = useState<Map<string, User['provisioningSteps']>>(() => {
     try {
       const saved = localStorage.getItem(PROVISIONING_STORAGE_KEY);
@@ -198,11 +201,11 @@ export default function UserDirectory() {
               const provStatus = getProvisioningStatus(user.id);
 
               return (
-                <tr key={user.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4 text-sm font-medium text-slate-900">{user.name}</td>
-                  <td className="px-6 py-4 text-sm text-slate-600">{user.email}</td>
-                  <td className="px-6 py-4 text-sm text-slate-600">{user.department}</td>
-                  <td className="px-6 py-4">
+                <tr key={user.id} className="hover:bg-slate-50 transition-colors cursor-pointer">
+                  <td onClick={() => setViewingUser(user)} className="px-6 py-4 text-sm font-medium text-slate-900">{user.name}</td>
+                  <td onClick={() => setViewingUser(user)} className="px-6 py-4 text-sm text-slate-600">{user.email}</td>
+                  <td onClick={() => setViewingUser(user)} className="px-6 py-4 text-sm text-slate-600">{user.department}</td>
+                  <td onClick={() => setViewingUser(user)} className="px-6 py-4">
                     <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
                       {user.sourceTab}
                     </span>
@@ -211,7 +214,10 @@ export default function UserDirectory() {
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 text-xs">
                         <button
-                          onClick={() => toggleProvisioningStep(user.id, 'stage')}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleProvisioningStep(user.id, 'stage');
+                          }}
                           className="flex items-center gap-1 hover:text-blue-600 transition-colors"
                         >
                           {steps.stage ? (
@@ -224,7 +230,10 @@ export default function UserDirectory() {
                       </div>
                       <div className="flex items-center gap-2 text-xs">
                         <button
-                          onClick={() => toggleProvisioningStep(user.id, 'enroll')}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleProvisioningStep(user.id, 'enroll');
+                          }}
                           className="flex items-center gap-1 hover:text-blue-600 transition-colors"
                         >
                           {steps.enroll ? (
@@ -237,7 +246,10 @@ export default function UserDirectory() {
                       </div>
                       <div className="flex items-center gap-2 text-xs">
                         <button
-                          onClick={() => toggleProvisioningStep(user.id, 'test')}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleProvisioningStep(user.id, 'test');
+                          }}
                           className="flex items-center gap-1 hover:text-blue-600 transition-colors"
                         >
                           {steps.test ? (
@@ -250,7 +262,7 @@ export default function UserDirectory() {
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td onClick={() => setViewingUser(user)} className="px-6 py-4">
                     <span
                       className={`inline-flex px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ${
                         provStatus === 'Completed'
@@ -266,13 +278,19 @@ export default function UserDirectory() {
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <button
-                        onClick={() => setEditingUser(user)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingUser(user);
+                        }}
                         className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
                       >
                         <Pencil size={18} />
                       </button>
                       <button
-                        onClick={() => handleDeleteUser(user.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteUser(user.id);
+                        }}
                         className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
                       >
                         <Trash2 size={18} />
@@ -306,6 +324,15 @@ export default function UserDirectory() {
           user={editingUser}
           onSubmit={handleUpdateUser}
           onClose={() => setEditingUser(null)}
+        />
+      )}
+
+      {viewingUser && (
+        <UserDetailModal
+          user={viewingUser}
+          devices={devices}
+          provisioningSteps={userProvisioningState.get(viewingUser.id) || { stage: false, enroll: false, test: false }}
+          onClose={() => setViewingUser(null)}
         />
       )}
     </div>

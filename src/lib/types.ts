@@ -6,6 +6,8 @@ export interface User {
   status: string;
   hireDate: string;
   sourceTab: string;
+  unit?: string;
+  alias?: string;
   provisioningStatus?: 'Not Started' | 'In Progress' | 'Completed';
   provisioningSteps?: {
     stage: boolean;
