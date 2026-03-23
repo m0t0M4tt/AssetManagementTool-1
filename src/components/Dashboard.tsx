@@ -1,9 +1,11 @@
-import { Package, Users, CheckCircle, XCircle } from 'lucide-react';
+import { Package, Users, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useUsers, useDevices } from '../hooks/useGoogleSheets';
+import { useNavigate } from '../hooks/useNavigate';
 
 export default function Dashboard() {
   const { users, loading: usersLoading } = useUsers();
   const { devices, loading: devicesLoading } = useDevices();
+  const navigate = useNavigate();
 
   const loading = usersLoading || devicesLoading;
 
@@ -28,7 +30,10 @@ export default function Dashboard() {
       <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-blue-600">
+        <button
+          onClick={() => navigate('directory')}
+          className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-blue-600 text-left hover:shadow-md transition-shadow cursor-pointer"
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-slate-600">Total Users</p>
@@ -39,9 +44,12 @@ export default function Dashboard() {
           <div className="mt-4 text-sm text-slate-600">
             <span className="text-green-600 font-medium">{stats.activeUsers}</span> active
           </div>
-        </div>
+        </button>
 
-        <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-green-600">
+        <button
+          onClick={() => navigate('devices')}
+          className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-green-600 text-left hover:shadow-md transition-shadow cursor-pointer"
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-slate-600">Total Devices</p>
@@ -53,29 +61,35 @@ export default function Dashboard() {
             <span className="text-green-600 font-medium">{stats.availableDevices}</span> available,{' '}
             <span className="text-blue-600 font-medium">{stats.assignedDevices}</span> assigned
           </div>
-        </div>
+        </button>
 
-        <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-emerald-600">
+        <button
+          onClick={() => navigate('devices?status=available')}
+          className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-amber-600 text-left hover:shadow-md transition-shadow cursor-pointer"
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-slate-600">Available Devices</p>
               <p className="text-3xl font-bold text-slate-900 mt-2">{stats.availableDevices}</p>
             </div>
-            <CheckCircle className="text-emerald-600" size={40} />
+            <AlertTriangle className="text-amber-600" size={40} />
           </div>
-          <div className="mt-4 text-sm text-slate-600">Ready for assignment</div>
-        </div>
+          <div className="mt-4 text-sm text-slate-600">Ready for deployment</div>
+        </button>
 
-        <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-amber-600">
+        <button
+          onClick={() => navigate('devices?status=assigned')}
+          className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-emerald-600 text-left hover:shadow-md transition-shadow cursor-pointer"
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-slate-600">Assigned Devices</p>
               <p className="text-3xl font-bold text-slate-900 mt-2">{stats.assignedDevices}</p>
             </div>
-            <XCircle className="text-amber-600" size={40} />
+            <CheckCircle className="text-emerald-600" size={40} />
           </div>
-          <div className="mt-4 text-sm text-slate-600">Currently in use</div>
-        </div>
+          <div className="mt-4 text-sm text-slate-600">Successfully deployed</div>
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

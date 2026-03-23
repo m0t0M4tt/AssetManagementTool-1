@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Plus, Pencil, Trash2, X } from 'lucide-react';
 import { useDevices } from '../hooks/useGoogleSheets';
 import type { Device } from '../lib/types';
@@ -10,6 +10,14 @@ export default function Devices() {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingDevice, setEditingDevice] = useState<Device | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const statusParam = params.get('status');
+    if (statusParam && ['available', 'assigned', 'maintenance', 'retired'].includes(statusParam)) {
+      setFilterStatus(statusParam);
+    }
+  }, []);
 
   const filteredDevices = devices.filter((device) => {
     const matchesSearch =
