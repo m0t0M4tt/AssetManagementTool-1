@@ -90,6 +90,10 @@ export class DataService {
           const loginH = rowData[7]?.toString() || '';
           const unit = rowData[11]?.toString() || '';
           const alias = rowData[12]?.toString() || '';
+
+          // Correct column mappings based on user specification:
+          // Column N (index 13) = CAD UNIT (APX Next)
+          // Column O (index 14) = CAD Unit N70
           const apxNextUnitId = rowData[13]?.toString() || '';
           const apxN70UnitId = rowData[14]?.toString() || '';
 
@@ -104,44 +108,45 @@ export class DataService {
           const radioIdAG = rowData[32]?.toString() || '';
 
           // Provisioning columns: AM to BJ (columns 38-61)
+          // Column AM = index 38, AN = 39, etc.
           // APX Next steps: AM-AU (38-46)
           const apxNextSteps = {
-            createNextUser: rowData[38]?.toString() === 'TRUE',
-            provisionP1UserRoles: rowData[39]?.toString() === 'TRUE',
-            provisionP1ConcurrentLogins: rowData[40]?.toString() === 'TRUE',
-            p1ProvisionUnitId: rowData[41]?.toString() === 'TRUE',
-            p1UnitPreassignment: rowData[42]?.toString() === 'TRUE',
-            placeUnitOnDutyPsap: rowData[43]?.toString() === 'TRUE',
-            awareAddDevice: rowData[44]?.toString() === 'TRUE',
-            p1AddDevice: rowData[45]?.toString() === 'TRUE',
-            awareDataSharing: rowData[46]?.toString() === 'TRUE',
+            createNextUser: rowData[38]?.toString()?.toUpperCase() === 'TRUE',
+            provisionP1UserRoles: rowData[39]?.toString()?.toUpperCase() === 'TRUE',
+            provisionP1ConcurrentLogins: rowData[40]?.toString()?.toUpperCase() === 'TRUE',
+            p1ProvisionUnitId: rowData[41]?.toString()?.toUpperCase() === 'TRUE',
+            p1UnitPreassignment: rowData[42]?.toString()?.toUpperCase() === 'TRUE',
+            placeUnitOnDutyPsap: rowData[43]?.toString()?.toUpperCase() === 'TRUE',
+            awareAddDevice: rowData[44]?.toString()?.toUpperCase() === 'TRUE',
+            p1AddDevice: rowData[45]?.toString()?.toUpperCase() === 'TRUE',
+            awareDataSharing: rowData[46]?.toString()?.toUpperCase() === 'TRUE',
           };
 
           // APX N70 steps: AV-BD (47-55)
           const apxN70Steps = {
-            createNextUser: rowData[47]?.toString() === 'TRUE',
-            provisionP1UserRoles: rowData[48]?.toString() === 'TRUE',
-            provisionP1ConcurrentLogins: rowData[49]?.toString() === 'TRUE',
-            p1ProvisionUnitId: rowData[50]?.toString() === 'TRUE',
-            p1UnitPreassignment: rowData[51]?.toString() === 'TRUE',
-            placeUnitOnDutyPsap: rowData[52]?.toString() === 'TRUE',
-            awareAddDevice: rowData[53]?.toString() === 'TRUE',
-            p1AddDevice: rowData[54]?.toString() === 'TRUE',
-            awareDataSharing: rowData[55]?.toString() === 'TRUE',
+            createNextUser: rowData[47]?.toString()?.toUpperCase() === 'TRUE',
+            provisionP1UserRoles: rowData[48]?.toString()?.toUpperCase() === 'TRUE',
+            provisionP1ConcurrentLogins: rowData[49]?.toString()?.toUpperCase() === 'TRUE',
+            p1ProvisionUnitId: rowData[50]?.toString()?.toUpperCase() === 'TRUE',
+            p1UnitPreassignment: rowData[51]?.toString()?.toUpperCase() === 'TRUE',
+            placeUnitOnDutyPsap: rowData[52]?.toString()?.toUpperCase() === 'TRUE',
+            awareAddDevice: rowData[53]?.toString()?.toUpperCase() === 'TRUE',
+            p1AddDevice: rowData[54]?.toString()?.toUpperCase() === 'TRUE',
+            awareDataSharing: rowData[55]?.toString()?.toUpperCase() === 'TRUE',
           };
 
           // Phone Apps steps: BE-BH (56-59)
           const phoneAppsSteps = {
-            responderCoreIdPhone: rowData[56]?.toString() === 'TRUE',
-            responderCoreIdPd: rowData[57]?.toString() === 'TRUE',
-            rapidDeployMapping: rowData[58]?.toString() === 'TRUE',
-            rapidDeployLightning: rowData[59]?.toString() === 'TRUE',
+            responderCoreIdPhone: rowData[56]?.toString()?.toUpperCase() === 'TRUE',
+            responderCoreIdPd: rowData[57]?.toString()?.toUpperCase() === 'TRUE',
+            rapidDeployMapping: rowData[58]?.toString()?.toUpperCase() === 'TRUE',
+            rapidDeployLightning: rowData[59]?.toString()?.toUpperCase() === 'TRUE',
           };
 
           // Body Worn Camera steps: BI-BJ (60-61)
           const svxV700Steps = {
-            setupInDeviceManagement: rowData[60]?.toString() === 'TRUE',
-            checkedOutToUser: rowData[61]?.toString() === 'TRUE',
+            setupInDeviceManagement: rowData[60]?.toString()?.toUpperCase() === 'TRUE',
+            checkedOutToUser: rowData[61]?.toString()?.toUpperCase() === 'TRUE',
           };
 
           if (!colW?.trim() && !colX?.trim() && !colY?.trim() && !colZ?.trim()) {
@@ -271,14 +276,26 @@ export class DataService {
               : 'In Progress';
 
             // Debug logging for first user in each tab to verify data extraction
-            if (allUsers.length === 0) {
-              console.log(`[${tabName}] Sample provisioning data for ${owner}:`, {
+            if (allUsers.length === 0 && owner) {
+              console.log(`[${tabName}] Sample data for ${owner}:`, {
+                owner,
+                loginC,
+                loginH,
+                unit,
+                alias,
+                apxNextUnitId: `col[13]="${apxNextUnitId}"`,
+                apxN70UnitId: `col[14]="${apxN70UnitId}"`,
                 apxNextSteps,
                 apxN70Steps,
                 phoneAppsSteps,
                 svxV700Steps,
                 completedSteps,
-                totalSteps: allSteps.length
+                totalSteps: allSteps.length,
+                rawProvisioningValues: {
+                  col38: rowData[38]?.toString(),
+                  col39: rowData[39]?.toString(),
+                  col40: rowData[40]?.toString(),
+                }
               });
             }
 
