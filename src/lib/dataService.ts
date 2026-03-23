@@ -270,6 +270,18 @@ export class DataService {
               ? 'Completed'
               : 'In Progress';
 
+            // Debug logging for first user in each tab to verify data extraction
+            if (allUsers.length === 0) {
+              console.log(`[${tabName}] Sample provisioning data for ${owner}:`, {
+                apxNextSteps,
+                apxN70Steps,
+                phoneAppsSteps,
+                svxV700Steps,
+                completedSteps,
+                totalSteps: allSteps.length
+              });
+            }
+
             allUsers.push({
               id: crypto.randomUUID(),
               name: owner,
@@ -278,6 +290,8 @@ export class DataService {
               status: 'active',
               hireDate: '',
               sourceTab: tabName,
+              unit: unit,
+              alias: alias,
               provisioningStatus: provisioningStatus,
               provisioningSteps: {
                 apxNext: apxNextSteps,
@@ -320,10 +334,50 @@ export class DataService {
         if (!existingUser.name && user.name) existingUser.name = user.name;
         if (!existingUser.email && user.email) existingUser.email = user.email;
         if (!existingUser.department && user.department) existingUser.department = user.department;
+        if (!existingUser.unit && user.unit) existingUser.unit = user.unit;
+        if (!existingUser.alias && user.alias) existingUser.alias = user.alias;
         if (!existingUser.apxNextLogin && user.apxNextLogin) existingUser.apxNextLogin = user.apxNextLogin;
         if (!existingUser.apxN70Login && user.apxN70Login) existingUser.apxN70Login = user.apxN70Login;
         if (!existingUser.apxNextUnitId && user.apxNextUnitId) existingUser.apxNextUnitId = user.apxNextUnitId;
         if (!existingUser.apxN70UnitId && user.apxN70UnitId) existingUser.apxN70UnitId = user.apxN70UnitId;
+
+        // Merge provisioning steps - take the one with more completed steps
+        if (user.provisioningSteps) {
+          if (!existingUser.provisioningSteps) {
+            existingUser.provisioningSteps = user.provisioningSteps;
+            existingUser.provisioningStatus = user.provisioningStatus;
+          } else {
+            // Merge by taking any TRUE values
+            const mergeSteps = (existing: any, incoming: any) => {
+              const merged = { ...existing };
+              for (const [key, value] of Object.entries(incoming)) {
+                if (value === true) merged[key] = true;
+              }
+              return merged;
+            };
+
+            existingUser.provisioningSteps = {
+              apxNext: mergeSteps(existingUser.provisioningSteps.apxNext, user.provisioningSteps.apxNext),
+              apxN70: mergeSteps(existingUser.provisioningSteps.apxN70, user.provisioningSteps.apxN70),
+              phoneApps: mergeSteps(existingUser.provisioningSteps.phoneApps || {}, user.provisioningSteps.phoneApps || {}),
+              svxV700: mergeSteps(existingUser.provisioningSteps.svxV700 || {}, user.provisioningSteps.svxV700 || {}),
+            };
+
+            // Recalculate status
+            const allSteps = [
+              ...Object.values(existingUser.provisioningSteps.apxNext),
+              ...Object.values(existingUser.provisioningSteps.apxN70),
+              ...Object.values(existingUser.provisioningSteps.phoneApps || {}),
+              ...Object.values(existingUser.provisioningSteps.svxV700 || {}),
+            ];
+            const completedSteps = allSteps.filter(Boolean).length;
+            existingUser.provisioningStatus = completedSteps === 0
+              ? 'Not Started'
+              : completedSteps === allSteps.length
+              ? 'Completed'
+              : 'In Progress';
+          }
+        }
       } else {
         userMap.set(userKey, user);
         deduplicatedUsers.push(user);
