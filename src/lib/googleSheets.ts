@@ -49,39 +49,15 @@ export async function getSheetWithCustomHeader(
   }
 
   try {
-    // Load cells up to column BJ (column 61) to include all provisioning data
-    await sheet.loadCells('A1:BJ500');
+    // Only load cells for columns A-AL (0-37) which don't have duplicates
+    // This avoids the duplicate header error from provisioning columns
+    await sheet.loadCells('A1:AL500');
 
-    // Load headers but make them unique by appending suffixes to duplicates
-    await sheet.loadCells(`A${HEADER_ROW_INDEX + 1}:BJ${HEADER_ROW_INDEX + 1}`);
-
-    const headerRow = HEADER_ROW_INDEX;
-    const rawHeaders: string[] = [];
-    const headerCounts = new Map<string, number>();
-
-    // Read raw headers and make duplicates unique
-    for (let col = 0; col < 62; col++) {
-      const cell = sheet.getCell(headerRow, col);
-      let headerValue = cell.value?.toString().trim() || `Column_${col}`;
-
-      // If this header already exists, append a suffix
-      if (headerCounts.has(headerValue)) {
-        const count = headerCounts.get(headerValue)! + 1;
-        headerCounts.set(headerValue, count);
-        // Modify the cell value to make it unique
-        cell.value = `${headerValue}_${count}`;
-        rawHeaders.push(`${headerValue}_${count}`);
-      } else {
-        headerCounts.set(headerValue, 1);
-        rawHeaders.push(headerValue);
-      }
-    }
-
-    // Now load the header row with unique values
+    // Load headers only for non-duplicate columns
     await sheet.loadHeaderRow(HEADER_ROW_INDEX);
 
-    console.log(`[${tabName}] Headers from Row 3 (count: ${rawHeaders.length}):`, rawHeaders.slice(0, 15));
-    console.log(`[${tabName}] Provisioning headers (AM-BJ):`, rawHeaders.slice(38, 62));
+    const headers = sheet.headerValues;
+    console.log(`[${tabName}] Headers from Row 3 (count: ${headers.length}):`, headers.slice(0, 10));
 
     return sheet;
   } catch (error) {
