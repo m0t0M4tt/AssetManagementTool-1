@@ -5,17 +5,32 @@ import { useAuth } from '../contexts/AuthContext';
 import { ProvisioningService } from '../lib/provisioningService';
 import type { User, ProvisioningSteps } from '../lib/types';
 
+type FilterStatus = 'all' | 'completed' | 'in-progress' | 'not-started';
+
 export default function Provisioning() {
   const { users, usersLoading: loading, usersError: error } = useData();
   const { accessToken } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
 
-  const filteredUsers = users.filter((user) =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.department.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.department.toLowerCase().includes(searchTerm.toLowerCase());
+
+    if (!matchesSearch) return false;
+
+    if (filterStatus === 'all') return true;
+
+    const progress = calculateProgress(user.provisioningSteps);
+
+    if (filterStatus === 'completed') return progress === 100;
+    if (filterStatus === 'in-progress') return progress > 0 && progress < 100;
+    if (filterStatus === 'not-started') return progress === 0;
+
+    return true;
+  });
 
   const calculateProgress = (steps: ProvisioningSteps | undefined): number => {
     if (!steps) return 0;
@@ -85,7 +100,14 @@ export default function Provisioning() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+        <button
+          onClick={() => setFilterStatus('all')}
+          className={`text-left rounded-lg shadow-sm border p-6 transition-all ${
+            filterStatus === 'all'
+              ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-500'
+              : 'bg-white border-slate-200 hover:border-blue-200'
+          }`}
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-slate-600">Total Users</p>
@@ -95,9 +117,16 @@ export default function Provisioning() {
               <TrendingUp className="text-blue-600" size={24} />
             </div>
           </div>
-        </div>
+        </button>
 
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+        <button
+          onClick={() => setFilterStatus('completed')}
+          className={`text-left rounded-lg shadow-sm border p-6 transition-all ${
+            filterStatus === 'completed'
+              ? 'bg-green-50 border-green-300 ring-2 ring-green-500'
+              : 'bg-white border-slate-200 hover:border-green-200'
+          }`}
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-slate-600">Completed</p>
@@ -107,9 +136,16 @@ export default function Provisioning() {
               <CheckCircle2 className="text-green-600" size={24} />
             </div>
           </div>
-        </div>
+        </button>
 
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+        <button
+          onClick={() => setFilterStatus('in-progress')}
+          className={`text-left rounded-lg shadow-sm border p-6 transition-all ${
+            filterStatus === 'in-progress'
+              ? 'bg-amber-50 border-amber-300 ring-2 ring-amber-500'
+              : 'bg-white border-slate-200 hover:border-amber-200'
+          }`}
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-slate-600">In Progress</p>
@@ -119,9 +155,16 @@ export default function Provisioning() {
               <AlertCircle className="text-amber-600" size={24} />
             </div>
           </div>
-        </div>
+        </button>
 
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+        <button
+          onClick={() => setFilterStatus('not-started')}
+          className={`text-left rounded-lg shadow-sm border p-6 transition-all ${
+            filterStatus === 'not-started'
+              ? 'bg-slate-50 border-slate-300 ring-2 ring-slate-500'
+              : 'bg-white border-slate-200 hover:border-slate-300'
+          }`}
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-slate-600">Not Started</p>
@@ -131,7 +174,7 @@ export default function Provisioning() {
               <Circle className="text-slate-600" size={24} />
             </div>
           </div>
-        </div>
+        </button>
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">

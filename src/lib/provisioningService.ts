@@ -77,7 +77,8 @@ export class ProvisioningService {
         return false;
       }
 
-      await sheet.loadCells();
+      // Load cells including provisioning columns (A-BJ, columns 0-61)
+      await sheet.loadCells('A1:BJ500');
       const rows = await sheet.getRows();
 
       // Find the user's row by matching email or name
