@@ -1,14 +1,10 @@
 import { X, User as UserIcon, Mail, MapPin, Package, Radio, CheckCircle2, Circle, AlertCircle } from 'lucide-react';
-import type { User, Device } from '../lib/types';
+import type { User, Device, ProvisioningSteps } from '../lib/types';
 
 interface UserDetailModalProps {
   user: User;
   devices: Device[];
-  provisioningSteps: {
-    stage: boolean;
-    enroll: boolean;
-    test: boolean;
-  };
+  provisioningSteps: ProvisioningSteps;
   onClose: () => void;
 }
 
@@ -23,8 +19,11 @@ export default function UserDetailModal({ user, devices, provisioningSteps, onCl
     .map(d => d.chicagoId)
     .filter((id): id is string => Boolean(id));
 
-  const completedSteps = Object.values(provisioningSteps).filter(Boolean).length;
-  const provisioningStatus = completedSteps === 0 ? 'Not Started' : completedSteps === 3 ? 'Completed' : 'In Progress';
+  const apxNextSteps = Object.values(provisioningSteps.apxNext);
+  const apxN70Steps = Object.values(provisioningSteps.apxN70);
+  const allSteps = [...apxNextSteps, ...apxN70Steps];
+  const completedSteps = allSteps.filter(Boolean).length;
+  const provisioningStatus = completedSteps === 0 ? 'Not Started' : completedSteps === allSteps.length ? 'Completed' : 'In Progress';
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -262,7 +261,7 @@ export default function UserDetailModal({ user, devices, provisioningSteps, onCl
               <CheckCircle2 size={20} className="text-green-600" />
               Provisioning Status
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="flex items-center justify-between bg-white px-4 py-3 rounded-lg border border-slate-200">
                 <span className="font-medium text-slate-700">Overall Status</span>
                 <span
@@ -277,51 +276,76 @@ export default function UserDetailModal({ user, devices, provisioningSteps, onCl
                   {provisioningStatus}
                 </span>
               </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div className={`bg-white p-4 rounded-lg border-2 ${
-                  provisioningSteps.stage ? 'border-green-300 bg-green-50' : 'border-slate-200'
-                }`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-slate-700">Stage</span>
-                    {provisioningSteps.stage ? (
-                      <CheckCircle2 size={20} className="text-green-600" />
-                    ) : (
-                      <Circle size={20} className="text-slate-300" />
-                    )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <h4 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                    <Radio size={18} className="text-blue-600" />
+                    APX Next Provisioning
+                  </h4>
+                  <div className="space-y-2">
+                    {[
+                      { key: 'createNextUser', label: 'Create Next User' },
+                      { key: 'provisionP1UserRoles', label: 'Provision P1 User Roles' },
+                      { key: 'provisionP1ConcurrentLogins', label: 'Provision P1 Concurrent Logins' },
+                      { key: 'responderCoreIdPhone', label: 'Responder <COREIDPHONE>' },
+                      { key: 'responderCoreIdPd', label: 'Responder <COREIDPD>' },
+                      { key: 'p1ProvisionUnitId', label: 'P1 - Provision Unit ID' },
+                      { key: 'p1UnitPreassignment', label: 'P1 - Unit Preassignment' },
+                      { key: 'placeUnitOnDutyPsap', label: 'Place Unit on Duty PSAP' },
+                      { key: 'awareAddDevice', label: 'Aware - Add Device' },
+                      { key: 'p1AddDevice', label: 'P1 - Add Device' },
+                      { key: 'awareDataSharing', label: 'Aware - Data Sharing' }
+                    ].map(step => {
+                      const isComplete = provisioningSteps.apxNext[step.key as keyof typeof provisioningSteps.apxNext];
+                      return (
+                        <div key={step.key} className="flex items-center gap-2 bg-white px-3 py-2 rounded border border-slate-200">
+                          {isComplete ? (
+                            <CheckCircle2 size={16} className="text-green-600 flex-shrink-0" />
+                          ) : (
+                            <Circle size={16} className="text-slate-300 flex-shrink-0" />
+                          )}
+                          <span className={`text-sm ${isComplete ? 'text-slate-900' : 'text-slate-500'}`}>
+                            {step.label}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <p className={`text-xs ${provisioningSteps.stage ? 'text-green-700' : 'text-slate-500'}`}>
-                    {provisioningSteps.stage ? 'Complete' : 'Pending'}
-                  </p>
                 </div>
-                <div className={`bg-white p-4 rounded-lg border-2 ${
-                  provisioningSteps.enroll ? 'border-green-300 bg-green-50' : 'border-slate-200'
-                }`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-slate-700">Enroll</span>
-                    {provisioningSteps.enroll ? (
-                      <CheckCircle2 size={20} className="text-green-600" />
-                    ) : (
-                      <Circle size={20} className="text-slate-300" />
-                    )}
+
+                <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                  <h4 className="font-semibold text-purple-900 mb-3 flex items-center gap-2">
+                    <Radio size={18} className="text-purple-600" />
+                    APX N70 Provisioning
+                  </h4>
+                  <div className="space-y-2">
+                    {[
+                      { key: 'createNextUser', label: 'Create Next User' },
+                      { key: 'provisionP1UserRoles', label: 'Provision P1 User Roles' },
+                      { key: 'provisionP1ConcurrentLogins', label: 'Provision P1 Concurrent Logins' },
+                      { key: 'p1ProvisionUnitId', label: 'P1 - Provision Unit ID' },
+                      { key: 'p1UnitPreassignment', label: 'P1 - Unit Preassignment' },
+                      { key: 'placeUnitOnDutyPsap', label: 'Place Unit on Duty PSAP' },
+                      { key: 'awareAddDevice', label: 'Aware - Add Device' },
+                      { key: 'p1AddDevice', label: 'P1 - Add Device' },
+                      { key: 'awareDataSharing', label: 'Aware - Data Sharing' }
+                    ].map(step => {
+                      const isComplete = provisioningSteps.apxN70[step.key as keyof typeof provisioningSteps.apxN70];
+                      return (
+                        <div key={step.key} className="flex items-center gap-2 bg-white px-3 py-2 rounded border border-slate-200">
+                          {isComplete ? (
+                            <CheckCircle2 size={16} className="text-green-600 flex-shrink-0" />
+                          ) : (
+                            <Circle size={16} className="text-slate-300 flex-shrink-0" />
+                          )}
+                          <span className={`text-sm ${isComplete ? 'text-slate-900' : 'text-slate-500'}`}>
+                            {step.label}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <p className={`text-xs ${provisioningSteps.enroll ? 'text-green-700' : 'text-slate-500'}`}>
-                    {provisioningSteps.enroll ? 'Complete' : 'Pending'}
-                  </p>
-                </div>
-                <div className={`bg-white p-4 rounded-lg border-2 ${
-                  provisioningSteps.test ? 'border-green-300 bg-green-50' : 'border-slate-200'
-                }`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-slate-700">Test</span>
-                    {provisioningSteps.test ? (
-                      <CheckCircle2 size={20} className="text-green-600" />
-                    ) : (
-                      <Circle size={20} className="text-slate-300" />
-                    )}
-                  </div>
-                  <p className={`text-xs ${provisioningSteps.test ? 'text-green-700' : 'text-slate-500'}`}>
-                    {provisioningSteps.test ? 'Complete' : 'Pending'}
-                  </p>
                 </div>
               </div>
             </div>

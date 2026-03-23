@@ -1,5 +1,5 @@
 import { getSheetWithCustomHeader } from './googleSheets';
-import type { User, Device } from './types';
+import type { User, Device, ProvisioningSteps } from './types';
 
 export class DataService {
   private static async getSheet(accessToken: string, tabName: string) {
@@ -265,10 +265,38 @@ export class DataService {
     try {
       const setChecklistData = await this.fetchSETChecklist(accessToken);
       for (const user of deduplicatedUsers) {
-        const checklistEntry = setChecklistData.get(user.email || user.name);
+        const userRegion = user.department || user.sourceTab;
+        const checklistEntry = setChecklistData.get(userRegion);
         if (checklistEntry) {
           user.provisioningSteps = checklistEntry.steps;
           user.provisioningStatus = checklistEntry.status;
+        } else {
+          user.provisioningSteps = {
+            apxNext: {
+              createNextUser: false,
+              provisionP1UserRoles: false,
+              provisionP1ConcurrentLogins: false,
+              responderCoreIdPhone: false,
+              responderCoreIdPd: false,
+              p1ProvisionUnitId: false,
+              p1UnitPreassignment: false,
+              placeUnitOnDutyPsap: false,
+              awareAddDevice: false,
+              p1AddDevice: false,
+              awareDataSharing: false,
+            },
+            apxN70: {
+              createNextUser: false,
+              provisionP1UserRoles: false,
+              provisionP1ConcurrentLogins: false,
+              p1ProvisionUnitId: false,
+              p1UnitPreassignment: false,
+              placeUnitOnDutyPsap: false,
+              awareAddDevice: false,
+              p1AddDevice: false,
+              awareDataSharing: false,
+            }
+          };
         }
       }
       console.log('SET Checklist data merged with users');
@@ -281,8 +309,8 @@ export class DataService {
     return deduplicatedUsers;
   }
 
-  private static async fetchSETChecklist(accessToken: string): Promise<Map<string, { steps: { stage: boolean; enroll: boolean; test: boolean }; status: 'Not Started' | 'In Progress' | 'Completed' }>> {
-    const checklistMap = new Map<string, { steps: { stage: boolean; enroll: boolean; test: boolean }; status: 'Not Started' | 'In Progress' | 'Completed' }>();
+  private static async fetchSETChecklist(accessToken: string): Promise<Map<string, { steps: ProvisioningSteps; status: 'Not Started' | 'In Progress' | 'Completed' }>> {
+    const checklistMap = new Map<string, { steps: ProvisioningSteps; status: 'Not Started' | 'In Progress' | 'Completed' }>();
 
     try {
       console.log('Fetching SET Checklist tab');
@@ -291,35 +319,91 @@ export class DataService {
 
       console.log(`SET Checklist: Found ${rows.length} rows`);
 
+      const stepNames = [
+        'Create Next User',
+        'Provision P1 User Roles',
+        'Provision P1 Concurrent Logins',
+        'Responder <COREIDPHONE>',
+        'Responder <COREIDPD>',
+        'P1 - Provision Unit ID',
+        'P1 - Unit Preassignment',
+        'Place Unit on Duty PSAP',
+        'Aware - Add Device',
+        'P1 - Add Device',
+        'Aware - Data Sharing'
+      ];
+
+      let currentSection = '';
+      let userEmail = '';
+      const userDataMap = new Map<string, any>();
+
       for (const row of rows) {
-        const email = this.getFlexibleValue(row, ['Email', 'email', 'E-mail', 'Owner']);
-        const stage = this.getFlexibleValue(row, ['Stage', 'stage', 'STAGE']);
-        const enroll = this.getFlexibleValue(row, ['Enroll', 'enroll', 'ENROLL']);
-        const test = this.getFlexibleValue(row, ['Test', 'test', 'TEST']);
+        const firstCol = this.getValueByIndex(row, 0);
 
-        if (!email) continue;
+        if (firstCol === 'Next' || firstCol === 'N70') {
+          currentSection = firstCol;
+          continue;
+        }
 
-        const stageChecked = stage?.toLowerCase() === 'true' || stage?.toLowerCase() === 'yes' || stage === '✓' || stage === 'x';
-        const enrollChecked = enroll?.toLowerCase() === 'true' || enroll?.toLowerCase() === 'yes' || enroll === '✓' || enroll === 'x';
-        const testChecked = test?.toLowerCase() === 'true' || test?.toLowerCase() === 'yes' || test === '✓' || test === 'x';
+        if (stepNames.includes(firstCol)) {
+          const stepName = firstCol;
 
-        const steps = {
-          stage: stageChecked,
-          enroll: enrollChecked,
-          test: testChecked,
-        };
+          const regions = ['Presales', 'Central', 'Northeast', 'Southeast', 'West', 'Software', 'Video', 'Federal', 'Field Requests'];
+
+          for (let i = 0; i < regions.length; i++) {
+            const regionValue = this.getValueByIndex(row, i + 1);
+            const isChecked = regionValue === 'TRUE' || regionValue === '✓' || regionValue === 'x' || regionValue?.toLowerCase() === 'true';
+
+            const region = regions[i];
+            const key = `${region}-${currentSection}`;
+
+            if (!userDataMap.has(region)) {
+              userDataMap.set(region, {
+                apxNext: {},
+                apxN70: {}
+              });
+            }
+
+            const userData = userDataMap.get(region);
+            const section = currentSection === 'Next' ? 'apxNext' : 'apxN70';
+
+            const fieldMap: { [key: string]: string } = {
+              'Create Next User': 'createNextUser',
+              'Provision P1 User Roles': 'provisionP1UserRoles',
+              'Provision P1 Concurrent Logins': 'provisionP1ConcurrentLogins',
+              'Responder <COREIDPHONE>': 'responderCoreIdPhone',
+              'Responder <COREIDPD>': 'responderCoreIdPd',
+              'P1 - Provision Unit ID': 'p1ProvisionUnitId',
+              'P1 - Unit Preassignment': 'p1UnitPreassignment',
+              'Place Unit on Duty PSAP': 'placeUnitOnDutyPsap',
+              'Aware - Add Device': 'awareAddDevice',
+              'P1 - Add Device': 'p1AddDevice',
+              'Aware - Data Sharing': 'awareDataSharing'
+            };
+
+            const fieldName = fieldMap[stepName];
+            if (fieldName) {
+              userData[section][fieldName] = isChecked;
+            }
+          }
+        }
+      }
+
+      for (const [region, steps] of userDataMap.entries()) {
+        const allSteps = [...Object.values(steps.apxNext), ...Object.values(steps.apxN70)];
+        const completedCount = allSteps.filter(Boolean).length;
 
         let status: 'Not Started' | 'In Progress' | 'Completed' = 'Not Started';
-        if (stageChecked && enrollChecked && testChecked) {
+        if (completedCount === allSteps.length) {
           status = 'Completed';
-        } else if (stageChecked || enrollChecked || testChecked) {
+        } else if (completedCount > 0) {
           status = 'In Progress';
         }
 
-        checklistMap.set(email, { steps, status });
+        checklistMap.set(region, { steps, status });
       }
 
-      console.log(`SET Checklist: Processed ${checklistMap.size} entries`);
+      console.log(`SET Checklist: Processed ${checklistMap.size} regional entries`);
     } catch (error) {
       console.error('Error fetching SET Checklist:', error);
       throw error;

@@ -330,7 +330,32 @@ export default function UserDirectory() {
         <UserDetailModal
           user={viewingUser}
           devices={devices}
-          provisioningSteps={userProvisioningState.get(viewingUser.id) || { stage: false, enroll: false, test: false }}
+          provisioningSteps={viewingUser.provisioningSteps || {
+            apxNext: {
+              createNextUser: false,
+              provisionP1UserRoles: false,
+              provisionP1ConcurrentLogins: false,
+              responderCoreIdPhone: false,
+              responderCoreIdPd: false,
+              p1ProvisionUnitId: false,
+              p1UnitPreassignment: false,
+              placeUnitOnDutyPsap: false,
+              awareAddDevice: false,
+              p1AddDevice: false,
+              awareDataSharing: false,
+            },
+            apxN70: {
+              createNextUser: false,
+              provisionP1UserRoles: false,
+              provisionP1ConcurrentLogins: false,
+              p1ProvisionUnitId: false,
+              p1UnitPreassignment: false,
+              placeUnitOnDutyPsap: false,
+              awareAddDevice: false,
+              p1AddDevice: false,
+              awareDataSharing: false,
+            }
+          }}
           onClose={() => setViewingUser(null)}
         />
       )}

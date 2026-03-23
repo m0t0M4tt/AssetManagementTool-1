@@ -1,3 +1,30 @@
+export interface ProvisioningSteps {
+  apxNext: {
+    createNextUser: boolean;
+    provisionP1UserRoles: boolean;
+    provisionP1ConcurrentLogins: boolean;
+    responderCoreIdPhone: boolean;
+    responderCoreIdPd: boolean;
+    p1ProvisionUnitId: boolean;
+    p1UnitPreassignment: boolean;
+    placeUnitOnDutyPsap: boolean;
+    awareAddDevice: boolean;
+    p1AddDevice: boolean;
+    awareDataSharing: boolean;
+  };
+  apxN70: {
+    createNextUser: boolean;
+    provisionP1UserRoles: boolean;
+    provisionP1ConcurrentLogins: boolean;
+    p1ProvisionUnitId: boolean;
+    p1UnitPreassignment: boolean;
+    placeUnitOnDutyPsap: boolean;
+    awareAddDevice: boolean;
+    p1AddDevice: boolean;
+    awareDataSharing: boolean;
+  };
+}
+
 export interface User {
   id: string;
   name: string;
@@ -9,11 +36,7 @@ export interface User {
   unit?: string;
   alias?: string;
   provisioningStatus?: 'Not Started' | 'In Progress' | 'Completed';
-  provisioningSteps?: {
-    stage: boolean;
-    enroll: boolean;
-    test: boolean;
-  };
+  provisioningSteps?: ProvisioningSteps;
   apxNextLogin?: string;
   apxN70Login?: string;
   apxNextUnitId?: string;
