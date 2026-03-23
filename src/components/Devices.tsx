@@ -29,7 +29,7 @@ export default function Devices() {
   const handleAddDevice = async (formData: FormData) => {
     const newDevice = {
       serialNumber: formData.get('serialNumber') as string,
-      assetTag: formData.get('assetTag') as string,
+      assetTag: '',
       model: formData.get('model') as string,
       category: formData.get('category') as string,
       assignedTo: formData.get('assignedTo') as string,
@@ -53,7 +53,7 @@ export default function Devices() {
 
     const updates = {
       serialNumber: formData.get('serialNumber') as string,
-      assetTag: formData.get('assetTag') as string,
+      assetTag: '',
       model: formData.get('model') as string,
       category: formData.get('category') as string,
       assignedTo: formData.get('assignedTo') as string,
@@ -130,9 +130,9 @@ export default function Devices() {
           className="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="all">All Categories</option>
-          <option value="Portable Radio">Portable Radio</option>
           <option value="LTE Radio">LTE Radio</option>
           <option value="Body Worn Camera">Body Worn Camera</option>
+          <option value="Video RSM">Video RSM</option>
         </select>
 
         <select
@@ -153,7 +153,6 @@ export default function Devices() {
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Serial Number</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Asset Tag</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Model</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Category</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Assigned To</th>
@@ -167,7 +166,6 @@ export default function Devices() {
             {filteredDevices.map((device) => (
               <tr key={device.id} className="hover:bg-slate-50 transition-colors">
                 <td className="px-6 py-4 text-sm font-medium text-slate-900">{device.serialNumber}</td>
-                <td className="px-6 py-4 text-sm text-slate-600">{device.assetTag}</td>
                 <td className="px-6 py-4 text-sm text-slate-600">{device.model}</td>
                 <td className="px-6 py-4 text-sm text-slate-600">{device.category}</td>
                 <td className="px-6 py-4 text-sm text-slate-600">{device.assignedTo || '-'}</td>
@@ -273,17 +271,6 @@ function DeviceFormModal({ title, device, onSubmit, onClose }: DeviceFormModalPr
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Asset Tag</label>
-            <input
-              type="text"
-              name="assetTag"
-              defaultValue={device?.assetTag}
-              required
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Model</label>
             <input
               type="text"
@@ -298,12 +285,12 @@ function DeviceFormModal({ title, device, onSubmit, onClose }: DeviceFormModalPr
             <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
             <select
               name="category"
-              defaultValue={device?.category || 'Portable Radio'}
+              defaultValue={device?.category || 'LTE Radio'}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="Portable Radio">Portable Radio</option>
               <option value="LTE Radio">LTE Radio</option>
               <option value="Body Worn Camera">Body Worn Camera</option>
+              <option value="Video RSM">Video RSM</option>
             </select>
           </div>
 

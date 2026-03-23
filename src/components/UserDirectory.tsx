@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Plus, Pencil, Trash2, X } from 'lucide-react';
+import { Search, Plus, Pencil, Trash2, X, CheckCircle2, Circle } from 'lucide-react';
 import { useUsers } from '../hooks/useGoogleSheets';
 import type { User } from '../lib/types';
 
@@ -9,6 +9,7 @@ export default function UserDirectory() {
   const [selectedTab, setSelectedTab] = useState<string>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [userProvisioningState, setUserProvisioningState] = useState<Map<string, User['provisioningSteps']>>(new Map());
 
   // Get unique tabs for filter dropdown
   const uniqueTabs = ['all', ...Array.from(new Set(users.map(u => u.sourceTab)))].filter(Boolean);
@@ -75,6 +76,32 @@ export default function UserDirectory() {
     }
   };
 
+  const toggleProvisioningStep = (userId: string, step: 'stage' | 'enroll' | 'test') => {
+    const currentSteps = userProvisioningState.get(userId) || {
+      stage: false,
+      enroll: false,
+      test: false,
+    };
+
+    const updatedSteps = {
+      ...currentSteps,
+      [step]: !currentSteps[step],
+    };
+
+    const newState = new Map(userProvisioningState);
+    newState.set(userId, updatedSteps);
+    setUserProvisioningState(newState);
+  };
+
+  const getProvisioningStatus = (userId: string): 'Not Started' | 'In Progress' | 'Completed' => {
+    const steps = userProvisioningState.get(userId) || { stage: false, enroll: false, test: false };
+    const completedSteps = Object.values(steps).filter(Boolean).length;
+
+    if (completedSteps === 0) return 'Not Started';
+    if (completedSteps === 3) return 'Completed';
+    return 'In Progress';
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -138,50 +165,101 @@ export default function UserDirectory() {
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Email</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Department</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Region</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Provisioning</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Status</th>
               <th className="px-6 py-3 text-right text-sm font-semibold text-slate-700">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {filteredUsers.map((user) => (
-              <tr key={user.id} className="hover:bg-slate-50 transition-colors">
-                <td className="px-6 py-4 text-sm font-medium text-slate-900">{user.name}</td>
-                <td className="px-6 py-4 text-sm text-slate-600">{user.email}</td>
-                <td className="px-6 py-4 text-sm text-slate-600">{user.department}</td>
-                <td className="px-6 py-4">
-                  <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                    {user.sourceTab}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <span
-                    className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                      user.status === 'active'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-slate-100 text-slate-800'
-                    }`}
-                  >
-                    {user.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <button
-                      onClick={() => setEditingUser(user)}
-                      className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+            {filteredUsers.map((user) => {
+              const steps = userProvisioningState.get(user.id) || { stage: false, enroll: false, test: false };
+              const provStatus = getProvisioningStatus(user.id);
+
+              return (
+                <tr key={user.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-6 py-4 text-sm font-medium text-slate-900">{user.name}</td>
+                  <td className="px-6 py-4 text-sm text-slate-600">{user.email}</td>
+                  <td className="px-6 py-4 text-sm text-slate-600">{user.department}</td>
+                  <td className="px-6 py-4">
+                    <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                      {user.sourceTab}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 text-xs">
+                        <button
+                          onClick={() => toggleProvisioningStep(user.id, 'stage')}
+                          className="flex items-center gap-1 hover:text-blue-600 transition-colors"
+                        >
+                          {steps.stage ? (
+                            <CheckCircle2 size={16} className="text-green-600" />
+                          ) : (
+                            <Circle size={16} className="text-slate-300" />
+                          )}
+                          <span className={steps.stage ? 'text-green-700 font-medium' : 'text-slate-600'}>Stage</span>
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs">
+                        <button
+                          onClick={() => toggleProvisioningStep(user.id, 'enroll')}
+                          className="flex items-center gap-1 hover:text-blue-600 transition-colors"
+                        >
+                          {steps.enroll ? (
+                            <CheckCircle2 size={16} className="text-green-600" />
+                          ) : (
+                            <Circle size={16} className="text-slate-300" />
+                          )}
+                          <span className={steps.enroll ? 'text-green-700 font-medium' : 'text-slate-600'}>Enroll</span>
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs">
+                        <button
+                          onClick={() => toggleProvisioningStep(user.id, 'test')}
+                          className="flex items-center gap-1 hover:text-blue-600 transition-colors"
+                        >
+                          {steps.test ? (
+                            <CheckCircle2 size={16} className="text-green-600" />
+                          ) : (
+                            <Circle size={16} className="text-slate-300" />
+                          )}
+                          <span className={steps.test ? 'text-green-700 font-medium' : 'text-slate-600'}>Test</span>
+                        </button>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span
+                      className={`inline-flex px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ${
+                        provStatus === 'Completed'
+                          ? 'bg-green-100 text-green-800'
+                          : provStatus === 'In Progress'
+                          ? 'bg-amber-100 text-amber-800'
+                          : 'bg-slate-100 text-slate-600'
+                      }`}
                     >
-                      <Pencil size={18} />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteUser(user.id)}
-                      className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                      {provStatus}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => setEditingUser(user)}
+                        className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                      >
+                        <Pencil size={18} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteUser(user.id)}
+                        className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
 

@@ -6,6 +6,12 @@ export interface User {
   status: string;
   hireDate: string;
   sourceTab: string;
+  provisioningStatus?: 'Not Started' | 'In Progress' | 'Completed';
+  provisioningSteps?: {
+    stage: boolean;
+    enroll: boolean;
+    test: boolean;
+  };
 }
 
 export interface Device {

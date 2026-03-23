@@ -46,6 +46,8 @@ export class DataService {
           continue;
         }
 
+        const deviceMap = new Map<string, Device>();
+
         for (const row of rows) {
           const owner = this.getValueByIndex(row, 1);
           const loginC = this.getValueByIndex(row, 2);
@@ -63,16 +65,16 @@ export class DataService {
           const radioIdAF = this.getValueByIndex(row, 31);
           const radioIdAG = this.getValueByIndex(row, 32);
 
-          if (colW) {
+          if (colW && !deviceMap.has(colW)) {
             const combinedRadioId = [radioIdAD, radioIdAE].filter(Boolean).join(', ');
             const uniqueId = `${colW}-APXNext`;
 
-            this.extractedDevices.push({
+            const device: Device = {
               id: uniqueId,
               serialNumber: colW,
-              assetTag: colW,
+              assetTag: '',
               model: 'APX Next',
-              category: 'Portable Radio',
+              category: 'LTE Radio',
               assignedTo: loginC,
               status: loginC ? 'assigned' : 'available',
               location: tabName,
@@ -82,17 +84,19 @@ export class DataService {
               unit: unit,
               alias: alias,
               sourceTab: tabName,
-            });
+            };
+            deviceMap.set(colW, device);
+            this.extractedDevices.push(device);
           }
 
-          if (colX) {
+          if (colX && !deviceMap.has(colX)) {
             const combinedRadioId = [radioIdAF, radioIdAG].filter(Boolean).join(', ');
             const uniqueId = `${colX}-APXN70`;
 
-            this.extractedDevices.push({
+            const device: Device = {
               id: uniqueId,
               serialNumber: colX,
-              assetTag: colX,
+              assetTag: '',
               model: 'APX N70',
               category: 'LTE Radio',
               assignedTo: loginH,
@@ -104,16 +108,18 @@ export class DataService {
               unit: unit,
               alias: alias,
               sourceTab: tabName,
-            });
+            };
+            deviceMap.set(colX, device);
+            this.extractedDevices.push(device);
           }
 
-          if (colY) {
+          if (colY && !deviceMap.has(colY)) {
             const uniqueId = `${colY}-V700`;
 
-            this.extractedDevices.push({
+            const device: Device = {
               id: uniqueId,
               serialNumber: colY,
-              assetTag: colY,
+              assetTag: '',
               model: 'V700',
               category: 'Body Worn Camera',
               assignedTo: owner,
@@ -125,18 +131,20 @@ export class DataService {
               unit: unit,
               alias: alias,
               sourceTab: tabName,
-            });
+            };
+            deviceMap.set(colY, device);
+            this.extractedDevices.push(device);
           }
 
-          if (colZ) {
+          if (colZ && !deviceMap.has(colZ)) {
             const uniqueId = `${colZ}-SVX`;
 
-            this.extractedDevices.push({
+            const device: Device = {
               id: uniqueId,
               serialNumber: colZ,
-              assetTag: colZ,
+              assetTag: '',
               model: 'SVX',
-              category: 'Body Worn Camera',
+              category: 'Video RSM',
               assignedTo: owner,
               status: owner ? 'assigned' : 'available',
               location: tabName,
@@ -146,7 +154,9 @@ export class DataService {
               unit: unit,
               alias: alias,
               sourceTab: tabName,
-            });
+            };
+            deviceMap.set(colZ, device);
+            this.extractedDevices.push(device);
           }
 
           const primaryEmail = loginC || loginH;
@@ -159,6 +169,12 @@ export class DataService {
               status: 'active',
               hireDate: '',
               sourceTab: tabName,
+              provisioningStatus: 'Not Started',
+              provisioningSteps: {
+                stage: false,
+                enroll: false,
+                test: false,
+              },
             });
           }
         }
