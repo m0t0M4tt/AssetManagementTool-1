@@ -99,6 +99,41 @@ export default function UserDetailModal({ user, devices, provisioningSteps, onCl
             </div>
           )}
 
+          {(user.apxNextLogin || user.apxN70Login || user.apxNextUnitId || user.apxN70UnitId) && (
+            <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+              <h3 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                <Radio size={20} className="text-green-600" />
+                CommandCentral Login Information
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                {user.apxNextLogin && (
+                  <div>
+                    <p className="text-sm font-medium text-slate-600">APX Next Login</p>
+                    <p className="text-slate-900 font-mono mt-1">{user.apxNextLogin}</p>
+                  </div>
+                )}
+                {user.apxN70Login && (
+                  <div>
+                    <p className="text-sm font-medium text-slate-600">APX N70 Login</p>
+                    <p className="text-slate-900 font-mono mt-1">{user.apxN70Login}</p>
+                  </div>
+                )}
+                {user.apxNextUnitId && (
+                  <div>
+                    <p className="text-sm font-medium text-slate-600">APX Next Unit ID</p>
+                    <p className="text-slate-900 font-mono mt-1">{user.apxNextUnitId}</p>
+                  </div>
+                )}
+                {user.apxN70UnitId && (
+                  <div>
+                    <p className="text-sm font-medium text-slate-600">APX N70 Unit ID</p>
+                    <p className="text-slate-900 font-mono mt-1">{user.apxN70UnitId}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
             <h3 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
               <Package size={20} className="text-green-600" />
@@ -150,6 +185,24 @@ export default function UserDetailModal({ user, devices, provisioningSteps, onCl
                               {device.status}
                             </span>
                           </div>
+                          {device.radioId && (
+                            <div className="col-span-2 mt-2 pt-2 border-t border-slate-200">
+                              <span className="text-slate-500">Radio IDs:</span>
+                              <span className="ml-2 font-mono text-slate-900">{device.radioId}</span>
+                            </div>
+                          )}
+                          {device.ecoId && (
+                            <div>
+                              <span className="text-slate-500">ECO ID:</span>
+                              <span className="ml-2 font-mono text-green-700">{device.ecoId}</span>
+                            </div>
+                          )}
+                          {device.chicagoId && (
+                            <div>
+                              <span className="text-slate-500">Chicago ID:</span>
+                              <span className="ml-2 font-mono text-blue-700">{device.chicagoId}</span>
+                            </div>
+                          )}
                         </div>
                         {device.notes && (
                           <div className="mt-2 text-sm text-slate-600 italic">

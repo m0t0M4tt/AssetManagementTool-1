@@ -14,6 +14,10 @@ export interface User {
     enroll: boolean;
     test: boolean;
   };
+  apxNextLogin?: string;
+  apxN70Login?: string;
+  apxNextUnitId?: string;
+  apxN70UnitId?: string;
 }
 
 export interface Device {

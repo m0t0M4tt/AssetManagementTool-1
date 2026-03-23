@@ -77,6 +77,8 @@ export class DataService {
           const loginH = this.getValueByIndex(row, 7);
           const unit = this.getValueByIndex(row, 11);
           const alias = this.getValueByIndex(row, 12);
+          const apxNextUnitId = this.getValueByIndex(row, 13);
+          const apxN70UnitId = this.getValueByIndex(row, 14);
 
           const colW = this.getValueByIndex(row, 22);
           const colX = this.getValueByIndex(row, 23);
@@ -214,6 +216,10 @@ export class DataService {
                 enroll: false,
                 test: false,
               },
+              apxNextLogin: loginC,
+              apxN70Login: loginH,
+              apxNextUnitId: apxNextUnitId,
+              apxN70UnitId: apxN70UnitId,
             });
           }
         }
@@ -245,15 +251,81 @@ export class DataService {
         if (!existingUser.name && user.name) existingUser.name = user.name;
         if (!existingUser.email && user.email) existingUser.email = user.email;
         if (!existingUser.department && user.department) existingUser.department = user.department;
+        if (!existingUser.apxNextLogin && user.apxNextLogin) existingUser.apxNextLogin = user.apxNextLogin;
+        if (!existingUser.apxN70Login && user.apxN70Login) existingUser.apxN70Login = user.apxN70Login;
+        if (!existingUser.apxNextUnitId && user.apxNextUnitId) existingUser.apxNextUnitId = user.apxNextUnitId;
+        if (!existingUser.apxN70UnitId && user.apxN70UnitId) existingUser.apxN70UnitId = user.apxN70UnitId;
       } else {
         userMap.set(userKey, user);
         deduplicatedUsers.push(user);
       }
     }
 
+    // Fetch SET Checklist data and merge with users
+    try {
+      const setChecklistData = await this.fetchSETChecklist(accessToken);
+      for (const user of deduplicatedUsers) {
+        const checklistEntry = setChecklistData.get(user.email || user.name);
+        if (checklistEntry) {
+          user.provisioningSteps = checklistEntry.steps;
+          user.provisioningStatus = checklistEntry.status;
+        }
+      }
+      console.log('SET Checklist data merged with users');
+    } catch (error) {
+      console.warn('Failed to fetch SET Checklist data:', error);
+    }
+
     console.log(`TOTAL USERS: ${deduplicatedUsers.length} (from ${allUsers.length} raw entries)`);
     console.log(`TOTAL DEVICES EXTRACTED: ${this.extractedDevices.length}`);
     return deduplicatedUsers;
+  }
+
+  private static async fetchSETChecklist(accessToken: string): Promise<Map<string, { steps: { stage: boolean; enroll: boolean; test: boolean }; status: 'Not Started' | 'In Progress' | 'Completed' }>> {
+    const checklistMap = new Map<string, { steps: { stage: boolean; enroll: boolean; test: boolean }; status: 'Not Started' | 'In Progress' | 'Completed' }>();
+
+    try {
+      console.log('Fetching SET Checklist tab');
+      const sheet = await this.getSheet(accessToken, 'SET Checklist');
+      const rows = await sheet.getRows();
+
+      console.log(`SET Checklist: Found ${rows.length} rows`);
+
+      for (const row of rows) {
+        const email = this.getFlexibleValue(row, ['Email', 'email', 'E-mail', 'Owner']);
+        const stage = this.getFlexibleValue(row, ['Stage', 'stage', 'STAGE']);
+        const enroll = this.getFlexibleValue(row, ['Enroll', 'enroll', 'ENROLL']);
+        const test = this.getFlexibleValue(row, ['Test', 'test', 'TEST']);
+
+        if (!email) continue;
+
+        const stageChecked = stage?.toLowerCase() === 'true' || stage?.toLowerCase() === 'yes' || stage === '✓' || stage === 'x';
+        const enrollChecked = enroll?.toLowerCase() === 'true' || enroll?.toLowerCase() === 'yes' || enroll === '✓' || enroll === 'x';
+        const testChecked = test?.toLowerCase() === 'true' || test?.toLowerCase() === 'yes' || test === '✓' || test === 'x';
+
+        const steps = {
+          stage: stageChecked,
+          enroll: enrollChecked,
+          test: testChecked,
+        };
+
+        let status: 'Not Started' | 'In Progress' | 'Completed' = 'Not Started';
+        if (stageChecked && enrollChecked && testChecked) {
+          status = 'Completed';
+        } else if (stageChecked || enrollChecked || testChecked) {
+          status = 'In Progress';
+        }
+
+        checklistMap.set(email, { steps, status });
+      }
+
+      console.log(`SET Checklist: Processed ${checklistMap.size} entries`);
+    } catch (error) {
+      console.error('Error fetching SET Checklist:', error);
+      throw error;
+    }
+
+    return checklistMap;
   }
 
   static async fetchDevices(accessToken: string): Promise<Device[]> {
