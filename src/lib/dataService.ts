@@ -6,8 +6,16 @@ export class DataService {
     return await getSheetWithCustomHeader(accessToken, tabName);
   }
 
+  private static getFlexibleValue(row: any, possibleHeaders: string[]): string {
+    for (const header of possibleHeaders) {
+      const value = row.get(header);
+      if (value) return value;
+    }
+    return '';
+  }
+
   static async fetchUsers(accessToken: string): Promise<User[]> {
-    const targetTabs = [
+    const tabs = [
       'Haas',
       'Presales',
       'Central',
@@ -18,37 +26,33 @@ export class DataService {
       'Software'
     ];
 
-    const allUsers: User[] = [];
-    const userMap = new Map<string, User>();
+    console.log('Starting parallel fetch for all tabs...');
 
-    for (const tabName of targetTabs) {
-      try {
-        const sheet = await this.getSheet(accessToken, tabName);
-        const rows = await sheet.getRows();
+    const results = await Promise.allSettled(
+      tabs.map(async (tabName) => {
+        try {
+          console.log(`Processing tab: ${tabName}`);
+          const sheet = await this.getSheet(accessToken, tabName);
+          const rows = await sheet.getRows();
 
-        for (const row of rows) {
-          const email = row.get('Login Email') || '';
-          const name = row.get('Owner') || '';
-          const group = row.get('Group') || tabName;
-          const cadUnit = row.get('CAD UNIT') || '';
+          console.log(`Processing tab: ${tabName}, Rows found: ${rows.length}`);
 
-          // Skip empty rows
-          if (!email && !name) continue;
+          if (rows.length === 0) {
+            console.warn(`Tab ${tabName} has 0 rows - empty or headers not set to Row 3`);
+            return [];
+          }
 
-          const userKey = email || name;
+          const users: User[] = [];
 
-          // Check for duplicates
-          if (userMap.has(userKey)) {
-            const existingUser = userMap.get(userKey)!;
-            // Merge: prefer non-empty values
-            existingUser.sourceTab = `${existingUser.sourceTab}, ${tabName}`;
-            if (!existingUser.id && cadUnit) existingUser.id = cadUnit;
-            if (!existingUser.name && name) existingUser.name = name;
-            if (!existingUser.email && email) existingUser.email = email;
-            if (!existingUser.department && group) existingUser.department = group;
-          } else {
-            // Add new user
-            const newUser: User = {
+          for (const row of rows) {
+            const email = this.getFlexibleValue(row, ['Login Email', 'Email', 'email']);
+            const name = this.getFlexibleValue(row, ['Owner', 'Name', 'User', 'name']);
+            const group = this.getFlexibleValue(row, ['Group', 'Territory', 'Department', 'group']) || tabName;
+            const cadUnit = this.getFlexibleValue(row, ['CAD UNIT', 'ID', 'id']);
+
+            if (!email && !name) continue;
+
+            users.push({
               id: cadUnit || crypto.randomUUID(),
               name: name,
               email: email,
@@ -56,20 +60,53 @@ export class DataService {
               status: 'active',
               hireDate: '',
               sourceTab: tabName,
-            };
-            userMap.set(userKey, newUser);
-            allUsers.push(newUser);
+            });
           }
-        }
 
-        console.log(`Successfully loaded ${rows.length} rows from ${tabName} tab`);
-      } catch (error) {
-        console.warn(`Failed to load ${tabName} tab, skipping:`, error);
+          console.log(`Successfully processed ${users.length} users from ${tabName} tab`);
+          return users;
+        } catch (error) {
+          if (error instanceof Error) {
+            if (error.message.includes('not found')) {
+              console.error(`Tab ${tabName} not found in spreadsheet`);
+            } else if (error.message.includes('header')) {
+              console.error(`Tab ${tabName} missing headers - ensure Row 3 has headers`);
+            } else {
+              console.error(`Tab ${tabName} error:`, error.message);
+            }
+          }
+          return [];
+        }
+      })
+    );
+
+    const allUserArrays = results.map((result) =>
+      result.status === 'fulfilled' ? result.value : []
+    );
+
+    const flatUsers = allUserArrays.flat();
+
+    const userMap = new Map<string, User>();
+    const deduplicatedUsers: User[] = [];
+
+    for (const user of flatUsers) {
+      const userKey = user.email || user.name;
+
+      if (userMap.has(userKey)) {
+        const existingUser = userMap.get(userKey)!;
+        existingUser.sourceTab = `${existingUser.sourceTab}, ${user.sourceTab}`;
+        if (!existingUser.id && user.id) existingUser.id = user.id;
+        if (!existingUser.name && user.name) existingUser.name = user.name;
+        if (!existingUser.email && user.email) existingUser.email = user.email;
+        if (!existingUser.department && user.department) existingUser.department = user.department;
+      } else {
+        userMap.set(userKey, user);
+        deduplicatedUsers.push(user);
       }
     }
 
-    console.log(`Total users loaded: ${allUsers.length}`);
-    return allUsers;
+    console.log(`Total users loaded: ${deduplicatedUsers.length} (from ${flatUsers.length} raw entries)`);
+    return deduplicatedUsers;
   }
 
   static async fetchDevices(accessToken: string): Promise<Device[]> {
