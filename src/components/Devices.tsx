@@ -18,6 +18,8 @@ export default function Devices() {
       device.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
       device.assignedTo.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (device.radioId && device.radioId.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (device.ecoId && device.ecoId.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (device.chicagoId && device.chicagoId.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (device.alias && device.alias.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const matchesStatus = filterStatus === 'all' || device.status === filterStatus;
@@ -155,9 +157,9 @@ export default function Devices() {
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Serial Number</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Model</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Category</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">System</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">ECO ID (1C1)</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Chicago ID (040)</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Assigned To</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Radio ID</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Status</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Location</th>
               <th className="px-6 py-3 text-right text-sm font-semibold text-slate-700">Actions</th>
@@ -169,23 +171,9 @@ export default function Devices() {
                 <td className="px-6 py-4 text-sm font-medium text-slate-900">{device.serialNumber}</td>
                 <td className="px-6 py-4 text-sm text-slate-600">{device.model}</td>
                 <td className="px-6 py-4 text-sm text-slate-600">{device.category}</td>
-                <td className="px-6 py-4">
-                  <span
-                    className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                      device.systemName === 'ECO (1C1)'
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : device.systemName === 'Chicago (040)'
-                        ? 'bg-sky-100 text-sky-800'
-                        : device.systemName === 'N/A'
-                        ? 'bg-slate-100 text-slate-500'
-                        : 'bg-amber-100 text-amber-800'
-                    }`}
-                  >
-                    {device.systemName || '-'}
-                  </span>
-                </td>
+                <td className="px-6 py-4 text-sm text-slate-600">{device.ecoId || '-'}</td>
+                <td className="px-6 py-4 text-sm text-slate-600">{device.chicagoId || '-'}</td>
                 <td className="px-6 py-4 text-sm text-slate-600">{device.assignedTo || '-'}</td>
-                <td className="px-6 py-4 text-sm text-slate-600">{device.radioId || '-'}</td>
                 <td className="px-6 py-4">
                   <span
                     className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${

@@ -23,18 +23,24 @@ export class DataService {
     }
   }
 
-  private static identifySystem(radioIds: string[]): string {
+  private static splitRadioIds(radioIds: string[]): { ecoId: string; chicagoId: string } {
+    const ecoIds: string[] = [];
+    const chicagoIds: string[] = [];
+
     for (const radioId of radioIds) {
       if (!radioId) continue;
 
       if (radioId.startsWith('15')) {
-        return 'ECO (1C1)';
-      }
-      if (radioId.startsWith('437')) {
-        return 'Chicago (040)';
+        ecoIds.push(radioId);
+      } else if (radioId.startsWith('437')) {
+        chicagoIds.push(radioId);
       }
     }
-    return 'Unknown/Other';
+
+    return {
+      ecoId: ecoIds.join(', '),
+      chicagoId: chicagoIds.join(', '),
+    };
   }
 
   private static extractedDevices: Device[] = [];
@@ -82,7 +88,7 @@ export class DataService {
           if (colW && !deviceMap.has(colW)) {
             const radioIdsArray = [radioIdAD, radioIdAE].filter(Boolean);
             const combinedRadioId = radioIdsArray.join(', ');
-            const systemName = this.identifySystem(radioIdsArray);
+            const { ecoId, chicagoId } = this.splitRadioIds(radioIdsArray);
             const uniqueId = `${colW}-APXNext`;
 
             const device: Device = {
@@ -96,7 +102,8 @@ export class DataService {
               location: tabName,
               notes: '',
               radioId: combinedRadioId,
-              systemName: systemName,
+              ecoId: ecoId,
+              chicagoId: chicagoId,
               owner: owner,
               unit: unit,
               alias: alias,
@@ -109,7 +116,7 @@ export class DataService {
           if (colX && !deviceMap.has(colX)) {
             const radioIdsArray = [radioIdAF, radioIdAG].filter(Boolean);
             const combinedRadioId = radioIdsArray.join(', ');
-            const systemName = this.identifySystem(radioIdsArray);
+            const { ecoId, chicagoId } = this.splitRadioIds(radioIdsArray);
             const uniqueId = `${colX}-APXN70`;
 
             const device: Device = {
@@ -123,7 +130,8 @@ export class DataService {
               location: tabName,
               notes: '',
               radioId: combinedRadioId,
-              systemName: systemName,
+              ecoId: ecoId,
+              chicagoId: chicagoId,
               owner: owner,
               unit: unit,
               alias: alias,
@@ -147,7 +155,8 @@ export class DataService {
               location: tabName,
               notes: '',
               radioId: '',
-              systemName: 'N/A',
+              ecoId: '',
+              chicagoId: '',
               owner: owner,
               unit: unit,
               alias: alias,
@@ -171,7 +180,8 @@ export class DataService {
               location: tabName,
               notes: '',
               radioId: '',
-              systemName: 'N/A',
+              ecoId: '',
+              chicagoId: '',
               owner: owner,
               unit: unit,
               alias: alias,

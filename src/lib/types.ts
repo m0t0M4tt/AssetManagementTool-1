@@ -25,7 +25,8 @@ export interface Device {
   location: string;
   notes: string;
   radioId?: string;
-  systemName?: string;
+  ecoId?: string;
+  chicagoId?: string;
   owner?: string;
   unit?: string;
   alias?: string;
