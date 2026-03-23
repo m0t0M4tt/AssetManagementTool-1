@@ -257,10 +257,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (isAuthenticated && accessToken && !hasFetched) {
       console.log('DataProvider: Initial fetch triggered');
       setHasFetched(true);
-      // Load users first, then devices (devices depend on users being loaded)
-      loadUsers().then(() => {
-        loadDevices();
-      });
+      // Load users and devices in parallel for better performance
+      loadUsers();
+      loadDevices();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, accessToken, hasFetched]);

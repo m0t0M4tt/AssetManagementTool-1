@@ -257,16 +257,174 @@ export class DataService {
   }
 
   static async fetchDevices(accessToken: string): Promise<Device[]> {
-    const deviceMap = new Map<string, Device>();
+    const tabs = ['Presales', 'Central', 'Northeast', 'Southeast', 'West', 'Federal', 'Software'];
+    const allDevices: Device[] = [];
 
-    for (const device of this.extractedDevices) {
+    console.log('Starting device fetch for tabs:', tabs);
+
+    for (const tabName of tabs) {
+      try {
+        console.log(`Fetching devices from tab: ${tabName}`);
+        const sheet = await this.getSheet(accessToken, tabName);
+        const rows = await sheet.getRows();
+
+        console.log(`Tab ${tabName}: Found ${rows.length} rows for device extraction`);
+
+        if (rows.length === 0) {
+          console.warn(`Tab ${tabName} has 0 rows - empty or headers not set to Row 3`);
+          continue;
+        }
+
+        const deviceMap = new Map<string, Device>();
+
+        for (const row of rows) {
+          const owner = this.getValueByIndex(row, 1);
+          const loginC = this.getValueByIndex(row, 2);
+          const loginH = this.getValueByIndex(row, 7);
+          const unit = this.getValueByIndex(row, 11);
+          const alias = this.getValueByIndex(row, 12);
+
+          const colW = this.getValueByIndex(row, 22);
+          const colX = this.getValueByIndex(row, 23);
+          const colY = this.getValueByIndex(row, 24);
+          const colZ = this.getValueByIndex(row, 25);
+
+          const radioIdAD = this.getValueByIndex(row, 29);
+          const radioIdAE = this.getValueByIndex(row, 30);
+          const radioIdAF = this.getValueByIndex(row, 31);
+          const radioIdAG = this.getValueByIndex(row, 32);
+
+          if (!colW?.trim() && !colX?.trim() && !colY?.trim() && !colZ?.trim()) {
+            continue;
+          }
+
+          if (colW && colW.trim() && colW.length >= 3 && !deviceMap.has(colW)) {
+            const radioIdsArray = [radioIdAD, radioIdAE].filter(Boolean);
+            const combinedRadioId = radioIdsArray.join(', ');
+            const { ecoId, chicagoId } = this.splitRadioIds(radioIdsArray);
+            const uniqueId = `${colW}-APXNext`;
+
+            const device: Device = {
+              id: uniqueId,
+              serialNumber: colW,
+              assetTag: '',
+              model: 'APX Next',
+              category: 'LTE Radio',
+              assignedTo: loginC,
+              status: loginC ? 'assigned' : 'available',
+              location: tabName,
+              notes: '',
+              radioId: combinedRadioId,
+              ecoId: ecoId,
+              chicagoId: chicagoId,
+              owner: owner,
+              unit: unit,
+              alias: alias,
+              sourceTab: tabName,
+            };
+            deviceMap.set(colW, device);
+            allDevices.push(device);
+          }
+
+          if (colX && colX.trim() && colX.length >= 3 && !deviceMap.has(colX)) {
+            const radioIdsArray = [radioIdAF, radioIdAG].filter(Boolean);
+            const combinedRadioId = radioIdsArray.join(', ');
+            const { ecoId, chicagoId } = this.splitRadioIds(radioIdsArray);
+            const uniqueId = `${colX}-APXN70`;
+
+            const device: Device = {
+              id: uniqueId,
+              serialNumber: colX,
+              assetTag: '',
+              model: 'APX N70',
+              category: 'LTE Radio',
+              assignedTo: loginH,
+              status: loginH ? 'assigned' : 'available',
+              location: tabName,
+              notes: '',
+              radioId: combinedRadioId,
+              ecoId: ecoId,
+              chicagoId: chicagoId,
+              owner: owner,
+              unit: unit,
+              alias: alias,
+              sourceTab: tabName,
+            };
+            deviceMap.set(colX, device);
+            allDevices.push(device);
+          }
+
+          if (colY && colY.trim() && colY.length >= 3 && !deviceMap.has(colY)) {
+            const uniqueId = `${colY}-V700`;
+
+            const device: Device = {
+              id: uniqueId,
+              serialNumber: colY,
+              assetTag: '',
+              model: 'V700',
+              category: 'Body Worn Camera',
+              assignedTo: owner,
+              status: owner ? 'assigned' : 'available',
+              location: tabName,
+              notes: '',
+              radioId: '',
+              ecoId: '',
+              chicagoId: '',
+              owner: owner,
+              unit: unit,
+              alias: alias,
+              sourceTab: tabName,
+            };
+            deviceMap.set(colY, device);
+            allDevices.push(device);
+          }
+
+          if (colZ && colZ.trim() && colZ.length >= 3 && !deviceMap.has(colZ)) {
+            const uniqueId = `${colZ}-SVX`;
+
+            const device: Device = {
+              id: uniqueId,
+              serialNumber: colZ,
+              assetTag: '',
+              model: 'SVX',
+              category: 'Video RSM',
+              assignedTo: owner,
+              status: owner ? 'assigned' : 'available',
+              location: tabName,
+              notes: '',
+              radioId: '',
+              ecoId: '',
+              chicagoId: '',
+              owner: owner,
+              unit: unit,
+              alias: alias,
+              sourceTab: tabName,
+            };
+            deviceMap.set(colZ, device);
+            allDevices.push(device);
+          }
+        }
+
+        console.log(`Tab ${tabName}: Successfully extracted devices`);
+      } catch (error) {
+        console.error(`Error fetching devices from tab ${tabName}:`, error);
+      }
+    }
+
+    // Deduplicate devices by serial number
+    const deviceMap = new Map<string, Device>();
+    for (const device of allDevices) {
       if (!deviceMap.has(device.serialNumber)) {
         deviceMap.set(device.serialNumber, device);
       }
     }
 
     const deduplicatedDevices = Array.from(deviceMap.values());
-    console.log(`Returning ${deduplicatedDevices.length} deduplicated devices (from ${this.extractedDevices.length} total)`);
+    console.log(`TOTAL DEVICES: ${deduplicatedDevices.length} (from ${allDevices.length} raw entries)`);
+
+    // Update the static cache for backward compatibility
+    this.extractedDevices = deduplicatedDevices;
+
     return deduplicatedDevices;
   }
 
