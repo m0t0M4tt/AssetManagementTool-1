@@ -92,10 +92,16 @@ export class DataService {
           const alias = rowData[12]?.toString() || '';
 
           // Correct column mappings based on user specification:
-          // Column N (index 13) = CAD UNIT (APX Next)
-          // Column O (index 14) = CAD Unit N70
+          // Column N (index 13) = CAD UNIT (APX Next Device ID)
+          // Column O (index 14) = CAD Unit N70 (N70 Device ID)
           const apxNextUnitId = rowData[13]?.toString() || '';
           const apxN70UnitId = rowData[14]?.toString() || '';
+
+          // CommandCentral Responder Aliases:
+          // Column AH (index 33) = APX Next Alias
+          // Column AI (index 34) = APX N70 Alias
+          const apxNextAlias = rowData[33]?.toString() || '';
+          const apxN70Alias = rowData[34]?.toString() || '';
 
           const colW = rowData[22]?.toString() || '';
           const colX = rowData[23]?.toString() || '';
@@ -320,6 +326,8 @@ export class DataService {
               apxN70Login: loginH,
               apxNextUnitId: apxNextUnitId,
               apxN70UnitId: apxN70UnitId,
+              apxNextAlias: apxNextAlias,
+              apxN70Alias: apxN70Alias,
             });
           }
         }

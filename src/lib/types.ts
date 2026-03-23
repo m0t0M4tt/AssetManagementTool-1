@@ -49,6 +49,8 @@ export interface User {
   apxN70Login?: string;
   apxNextUnitId?: string;
   apxN70UnitId?: string;
+  apxNextAlias?: string;
+  apxN70Alias?: string;
 }
 
 export interface Device {

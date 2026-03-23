@@ -80,65 +80,71 @@ export default function UserDetailModal({ user, devices, provisioningSteps, onCl
             </div>
           </div>
 
-          {(user.unit || user.alias) && (
+          {(user.apxNextUnitId || user.apxN70UnitId || user.apxNextAlias || user.apxN70Alias) && (
             <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-              <h3 className="text-lg font-semibold text-slate-900 mb-3">Assignment Overview</h3>
-              <div className="grid grid-cols-2 gap-4">
-                {user.unit && (
-                  <div>
-                    <p className="text-sm font-medium text-slate-600">Unit ID</p>
-                    <p className="text-lg font-bold text-blue-900 mt-1">{user.unit}</p>
+              <h3 className="text-lg font-semibold text-slate-900 mb-3">CommandCentral Responder</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {(user.apxNextUnitId || user.apxNextAlias) && (
+                  <div className="bg-white rounded-lg p-3 border border-blue-200">
+                    <p className="text-xs font-semibold text-blue-700 uppercase mb-2">APX Next</p>
+                    {user.apxNextUnitId && (
+                      <div className="mb-2">
+                        <p className="text-xs font-medium text-slate-500">Device ID (Column N)</p>
+                        <p className="text-slate-900 font-mono text-sm mt-0.5">{user.apxNextUnitId}</p>
+                      </div>
+                    )}
+                    {user.apxNextAlias && (
+                      <div>
+                        <p className="text-xs font-medium text-slate-500">Alias (Column AH)</p>
+                        <p className="text-slate-900 font-mono text-sm mt-0.5">{user.apxNextAlias}</p>
+                      </div>
+                    )}
                   </div>
                 )}
-                {user.alias && (
-                  <div>
-                    <p className="text-sm font-medium text-slate-600">Alias</p>
-                    <p className="text-lg font-bold text-blue-900 mt-1">{user.alias}</p>
+                {(user.apxN70UnitId || user.apxN70Alias) && (
+                  <div className="bg-white rounded-lg p-3 border border-blue-200">
+                    <p className="text-xs font-semibold text-blue-700 uppercase mb-2">APX N70</p>
+                    {user.apxN70UnitId && (
+                      <div className="mb-2">
+                        <p className="text-xs font-medium text-slate-500">Device ID (Column O)</p>
+                        <p className="text-slate-900 font-mono text-sm mt-0.5">{user.apxN70UnitId}</p>
+                      </div>
+                    )}
+                    {user.apxN70Alias && (
+                      <div>
+                        <p className="text-xs font-medium text-slate-500">Alias (Column AI)</p>
+                        <p className="text-slate-900 font-mono text-sm mt-0.5">{user.apxN70Alias}</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          {(user.apxNextLogin || user.apxN70Login || user.apxNextUnitId || user.apxN70UnitId) && (
+          {(user.apxNextLogin || user.apxN70Login) && (
             <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-200">
               <h3 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
                 <Radio size={20} className="text-emerald-600" />
                 CommandCentral Login Information
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {(user.apxNextLogin || user.apxNextUnitId) && (
+                {user.apxNextLogin && (
                   <div className="bg-white rounded-lg p-3 border border-emerald-200">
                     <p className="text-xs font-semibold text-emerald-700 uppercase mb-2">APX Next</p>
-                    {user.apxNextLogin && (
-                      <div className="mb-2">
-                        <p className="text-xs font-medium text-slate-500">Login (Column C)</p>
-                        <p className="text-slate-900 font-mono text-sm mt-0.5">{user.apxNextLogin}</p>
-                      </div>
-                    )}
-                    {user.apxNextUnitId && (
-                      <div>
-                        <p className="text-xs font-medium text-slate-500">Unit ID (Column N)</p>
-                        <p className="text-slate-900 font-mono text-sm mt-0.5">{user.apxNextUnitId}</p>
-                      </div>
-                    )}
+                    <div>
+                      <p className="text-xs font-medium text-slate-500">Login (Column C)</p>
+                      <p className="text-slate-900 font-mono text-sm mt-0.5">{user.apxNextLogin}</p>
+                    </div>
                   </div>
                 )}
-                {(user.apxN70Login || user.apxN70UnitId) && (
+                {user.apxN70Login && (
                   <div className="bg-white rounded-lg p-3 border border-emerald-200">
                     <p className="text-xs font-semibold text-emerald-700 uppercase mb-2">APX N70</p>
-                    {user.apxN70Login && (
-                      <div className="mb-2">
-                        <p className="text-xs font-medium text-slate-500">Login (Column H)</p>
-                        <p className="text-slate-900 font-mono text-sm mt-0.5">{user.apxN70Login}</p>
-                      </div>
-                    )}
-                    {user.apxN70UnitId && (
-                      <div>
-                        <p className="text-xs font-medium text-slate-500">Unit ID (Column O)</p>
-                        <p className="text-slate-900 font-mono text-sm mt-0.5">{user.apxN70UnitId}</p>
-                      </div>
-                    )}
+                    <div>
+                      <p className="text-xs font-medium text-slate-500">Login (Column H)</p>
+                      <p className="text-slate-900 font-mono text-sm mt-0.5">{user.apxN70Login}</p>
+                    </div>
                   </div>
                 )}
               </div>
