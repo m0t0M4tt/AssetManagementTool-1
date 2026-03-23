@@ -2,6 +2,10 @@ import { getGoogleSheetDoc } from './googleSheets';
 import type { User } from './types';
 
 export class ProvisioningService {
+  private static async delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
   private static getColumnIndexForStep(
     section: 'apxNext' | 'apxN70' | 'phoneApps' | 'svxV700',
     stepKey: string
@@ -108,9 +112,75 @@ export class ProvisioningService {
 
       await sheet.saveUpdatedCells();
       console.log(`Updated ${section}.${stepKey} to ${value} for user ${user.email || user.name}`);
+
+      // Add delay to avoid hitting rate limits
+      await this.delay(100);
+
       return true;
     } catch (error) {
       console.error('Error updating provisioning step:', error);
+      return false;
+    }
+  }
+
+  static async batchUpdateProvisioningSteps(
+    accessToken: string,
+    user: User,
+    updates: Array<{
+      section: 'apxNext' | 'apxN70' | 'phoneApps' | 'svxV700';
+      stepKey: string;
+      value: boolean;
+    }>
+  ): Promise<boolean> {
+    try {
+      const doc = await getGoogleSheetDoc(accessToken);
+      const sourceTab = user.sourceTab?.split(',')[0].trim() || 'Software';
+      const sheet = doc.sheetsByTitle[sourceTab];
+
+      if (!sheet) {
+        console.error(`Sheet "${sourceTab}" not found`);
+        return false;
+      }
+
+      // Load cells including provisioning columns (A-BJ, columns 0-61)
+      await sheet.loadCells('A1:BJ500');
+      const rows = await sheet.getRows();
+
+      // Find the user's row by matching email or name
+      let userRowIndex = -1;
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const rowEmail = row.get('Next Login (C)') || row.get('N70 Login (H)');
+        const rowName = row.get('Owner (B)');
+
+        if (
+          (user.email && rowEmail === user.email) ||
+          (user.name && rowName === user.name)
+        ) {
+          userRowIndex = row.rowNumber - 1;
+          break;
+        }
+      }
+
+      if (userRowIndex === -1) {
+        console.error(`User not found in sheet: ${user.email || user.name}`);
+        return false;
+      }
+
+      // Update all cells in memory
+      for (const update of updates) {
+        const columnIndex = this.getColumnIndexForStep(update.section, update.stepKey);
+        const cell = sheet.getCell(userRowIndex, columnIndex);
+        cell.value = update.value ? 'TRUE' : '';
+      }
+
+      // Save all updates in a single batch request
+      await sheet.saveUpdatedCells();
+      console.log(`Batch updated ${updates.length} provisioning steps for user ${user.email || user.name}`);
+
+      return true;
+    } catch (error) {
+      console.error('Error batch updating provisioning steps:', error);
       return false;
     }
   }

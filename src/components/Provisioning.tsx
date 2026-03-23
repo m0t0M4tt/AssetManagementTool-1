@@ -341,23 +341,35 @@ function ProvisioningDetailModal({ user, accessToken, onClose }: ProvisioningDet
     setIsSaving(true);
 
     try {
+      // Collect all updates into a single batch
+      const updates: Array<{
+        section: 'apxNext' | 'apxN70' | 'phoneApps' | 'svxV700';
+        stepKey: string;
+        value: boolean;
+      }> = [];
+
       const sections: Array<'apxNext' | 'apxN70' | 'phoneApps' | 'svxV700'> = ['apxNext', 'apxN70', 'phoneApps', 'svxV700'];
 
       for (const section of sections) {
         const sectionSteps = steps[section];
         for (const [stepKey, value] of Object.entries(sectionSteps)) {
-          await ProvisioningService.updateProvisioningStep(
-            accessToken,
-            user,
-            section,
-            stepKey,
-            value
-          );
+          updates.push({ section, stepKey, value });
         }
       }
 
-      setHasChanges(false);
-      alert('Changes saved successfully!');
+      // Send all updates in a single batch request
+      const success = await ProvisioningService.batchUpdateProvisioningSteps(
+        accessToken,
+        user,
+        updates
+      );
+
+      if (success) {
+        setHasChanges(false);
+        alert('Changes saved successfully!');
+      } else {
+        alert('Failed to save changes. Please try again.');
+      }
     } catch (error) {
       console.error('Error saving changes:', error);
       alert('Failed to save changes. Please try again.');
