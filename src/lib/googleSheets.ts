@@ -1,8 +1,8 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 
-const SHEET_ID = import.meta.env.VITE_GOOGLE_SHEET_ID;
-const SERVICE_ACCOUNT_EMAIL = import.meta.env.VITE_GOOGLE_SERVICE_ACCOUNT_EMAIL;
-const PRIVATE_KEY = import.meta.env.VITE_GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+const SHEET_ID = import.meta.env.GOOGLE_SHEET_ID;
+const SERVICE_ACCOUNT_EMAIL = import.meta.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+const PRIVATE_KEY = import.meta.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
 let docInstance: GoogleSpreadsheet | null = null;
 
