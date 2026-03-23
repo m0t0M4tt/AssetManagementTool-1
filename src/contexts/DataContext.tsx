@@ -57,6 +57,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [devicesLoading, setDevicesLoading] = useState(true);
   const [usersError, setUsersError] = useState<string | null>(null);
   const [devicesError, setDevicesError] = useState<string | null>(null);
+  const [hasFetched, setHasFetched] = useState(false);
   const { accessToken, logout, isAuthenticated } = useAuth();
 
   const handleTokenExpired = useCallback(() => {
@@ -253,11 +254,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [accessToken, loadDevices, handleTokenExpired]);
 
   useEffect(() => {
-    if (isAuthenticated && accessToken) {
+    if (isAuthenticated && accessToken && !hasFetched) {
+      console.log('DataProvider: Initial fetch triggered');
+      setHasFetched(true);
       loadUsers();
       loadDevices();
     }
-  }, [isAuthenticated, accessToken, loadUsers, loadDevices]);
+  }, [isAuthenticated, accessToken, hasFetched, loadUsers, loadDevices]);
 
   const value: DataContextType = {
     users,

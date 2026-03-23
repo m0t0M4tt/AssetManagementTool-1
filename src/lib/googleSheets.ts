@@ -49,11 +49,11 @@ export async function getSheetWithCustomHeader(
   }
 
   try {
+    await sheet.loadCells('A:AG');
     await sheet.loadHeaderRow(HEADER_ROW_INDEX);
 
-    // Debug: Log first 5 headers from Row 3
-    const headers = sheet.headerValues.slice(0, 5);
-    console.log(`[${tabName}] Headers from Row 3:`, headers);
+    const headers = sheet.headerValues;
+    console.log(`[${tabName}] Headers from Row 3 (count: ${headers.length}):`, headers.slice(0, 10));
 
     return sheet;
   } catch (error) {

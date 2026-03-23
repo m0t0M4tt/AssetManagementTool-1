@@ -69,6 +69,9 @@ export class DataService {
         const deviceMap = new Map<string, Device>();
 
         for (const row of rows) {
+          const rowWidth = row._rawData?.length || 0;
+          console.log(`Tab: ${tabName}, Row Width: ${rowWidth} columns`);
+
           const owner = this.getValueByIndex(row, 1);
           const loginC = this.getValueByIndex(row, 2);
           const loginH = this.getValueByIndex(row, 7);
@@ -85,7 +88,11 @@ export class DataService {
           const radioIdAF = this.getValueByIndex(row, 31);
           const radioIdAG = this.getValueByIndex(row, 32);
 
-          if (colW && !deviceMap.has(colW)) {
+          if (!colW?.trim() && !colX?.trim() && !colY?.trim() && !colZ?.trim()) {
+            continue;
+          }
+
+          if (colW && colW.trim() && !deviceMap.has(colW)) {
             const radioIdsArray = [radioIdAD, radioIdAE].filter(Boolean);
             const combinedRadioId = radioIdsArray.join(', ');
             const { ecoId, chicagoId } = this.splitRadioIds(radioIdsArray);
@@ -113,7 +120,7 @@ export class DataService {
             this.extractedDevices.push(device);
           }
 
-          if (colX && !deviceMap.has(colX)) {
+          if (colX && colX.trim() && !deviceMap.has(colX)) {
             const radioIdsArray = [radioIdAF, radioIdAG].filter(Boolean);
             const combinedRadioId = radioIdsArray.join(', ');
             const { ecoId, chicagoId } = this.splitRadioIds(radioIdsArray);
@@ -141,7 +148,7 @@ export class DataService {
             this.extractedDevices.push(device);
           }
 
-          if (colY && !deviceMap.has(colY)) {
+          if (colY && colY.trim() && !deviceMap.has(colY)) {
             const uniqueId = `${colY}-V700`;
 
             const device: Device = {
@@ -166,7 +173,7 @@ export class DataService {
             this.extractedDevices.push(device);
           }
 
-          if (colZ && !deviceMap.has(colZ)) {
+          if (colZ && colZ.trim() && !deviceMap.has(colZ)) {
             const uniqueId = `${colZ}-SVX`;
 
             const device: Device = {
