@@ -260,7 +260,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       loadUsers();
       loadDevices();
     }
-  }, [isAuthenticated, accessToken, hasFetched, loadUsers, loadDevices]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, accessToken, hasFetched]);
 
   const value: DataContextType = {
     users,
