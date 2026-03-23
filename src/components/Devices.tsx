@@ -7,6 +7,7 @@ export default function Devices() {
   const { devices, loading, error, addDevice, updateDevice, deleteDevice } = useDevices();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterCategory, setFilterCategory] = useState<string>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingDevice, setEditingDevice] = useState<Device | null>(null);
 
@@ -18,8 +19,9 @@ export default function Devices() {
       device.assignedTo.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = filterStatus === 'all' || device.status === filterStatus;
+    const matchesCategory = filterCategory === 'all' || device.category === filterCategory;
 
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && matchesCategory;
   });
 
   const handleAddDevice = async (formData: FormData) => {
@@ -27,6 +29,7 @@ export default function Devices() {
       serialNumber: formData.get('serialNumber') as string,
       assetTag: formData.get('assetTag') as string,
       model: formData.get('model') as string,
+      category: formData.get('category') as string,
       assignedTo: formData.get('assignedTo') as string,
       status: formData.get('status') as string,
       location: formData.get('location') as string,
@@ -50,6 +53,7 @@ export default function Devices() {
       serialNumber: formData.get('serialNumber') as string,
       assetTag: formData.get('assetTag') as string,
       model: formData.get('model') as string,
+      category: formData.get('category') as string,
       assignedTo: formData.get('assignedTo') as string,
       status: formData.get('status') as string,
       location: formData.get('location') as string,
@@ -106,7 +110,7 @@ export default function Devices() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
           <input
@@ -117,6 +121,17 @@ export default function Devices() {
             className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
+
+        <select
+          value={filterCategory}
+          onChange={(e) => setFilterCategory(e.target.value)}
+          className="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="all">All Categories</option>
+          <option value="Portable Radio">Portable Radio</option>
+          <option value="LTE Radio">LTE Radio</option>
+          <option value="Body Worn Camera">Body Worn Camera</option>
+        </select>
 
         <select
           value={filterStatus}
@@ -138,6 +153,7 @@ export default function Devices() {
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Serial Number</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Asset Tag</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Model</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Category</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Assigned To</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Radio ID</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Status</th>
@@ -151,6 +167,7 @@ export default function Devices() {
                 <td className="px-6 py-4 text-sm font-medium text-slate-900">{device.serialNumber}</td>
                 <td className="px-6 py-4 text-sm text-slate-600">{device.assetTag}</td>
                 <td className="px-6 py-4 text-sm text-slate-600">{device.model}</td>
+                <td className="px-6 py-4 text-sm text-slate-600">{device.category}</td>
                 <td className="px-6 py-4 text-sm text-slate-600">{device.assignedTo || '-'}</td>
                 <td className="px-6 py-4 text-sm text-slate-600">{device.radioId || '-'}</td>
                 <td className="px-6 py-4">
@@ -273,6 +290,19 @@ function DeviceFormModal({ title, device, onSubmit, onClose }: DeviceFormModalPr
               required
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
+            <select
+              name="category"
+              defaultValue={device?.category || 'Portable Radio'}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="Portable Radio">Portable Radio</option>
+              <option value="LTE Radio">LTE Radio</option>
+              <option value="Body Worn Camera">Body Worn Camera</option>
+            </select>
           </div>
 
           <div>

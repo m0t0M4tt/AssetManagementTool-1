@@ -13,11 +13,15 @@ export interface Device {
   serialNumber: string;
   assetTag: string;
   model: string;
+  category: string;
   assignedTo: string;
   status: string;
   location: string;
   notes: string;
   radioId?: string;
+  owner?: string;
+  unit?: string;
+  alias?: string;
   sourceTab?: string;
 }
 

@@ -26,115 +26,115 @@ export class DataService {
   private static extractedDevices: Device[] = [];
 
   static async fetchUsers(accessToken: string): Promise<User[]> {
-    const tabs = ['Central', 'Northeast', 'Southeast', 'West', 'Federal', 'Software'];
+    const tabs = ['Presales', 'Central', 'Northeast', 'Southeast', 'West', 'Federal', 'Software'];
 
-    console.log('Starting parallel fetch for regional tabs...');
+    console.log('Starting fetch for tabs:', tabs);
 
     this.extractedDevices = [];
+    const allUsers: User[] = [];
 
-    const results = await Promise.allSettled(
-      tabs.map(async (tabName) => {
-        try {
-          console.log(`Processing tab: ${tabName}`);
-          const sheet = await this.getSheet(accessToken, tabName);
-          const rows = await sheet.getRows();
+    for (const tabName of tabs) {
+      try {
+        console.log(`Processing tab: ${tabName}`);
+        const sheet = await this.getSheet(accessToken, tabName);
+        const rows = await sheet.getRows();
 
-          console.log(`Processing tab: ${tabName}, Rows found: ${rows.length}`);
+        console.log(`Tab ${tabName}: Found ${rows.length} rows`);
 
-          if (rows.length === 0) {
-            console.warn(`Tab ${tabName} has 0 rows - empty or headers not set to Row 3`);
-            return [];
+        if (rows.length === 0) {
+          console.warn(`Tab ${tabName} has 0 rows - empty or headers not set to Row 3`);
+          continue;
+        }
+
+        for (const row of rows) {
+          const owner = this.getValueByIndex(row, 1);
+          const loginC = this.getValueByIndex(row, 2);
+          const loginH = this.getValueByIndex(row, 7);
+          const unit = this.getValueByIndex(row, 11);
+          const alias = this.getValueByIndex(row, 12);
+
+          const radioW = this.getValueByIndex(row, 22);
+          const radioY = this.getValueByIndex(row, 24);
+
+          if (radioW) {
+            const assetX = this.getValueByIndex(row, 23);
+            const radioIdAD = this.getValueByIndex(row, 29);
+            const radioIdAE = this.getValueByIndex(row, 30);
+            const combinedRadioId = [radioIdAD, radioIdAE].filter(Boolean).join(', ');
+
+            this.extractedDevices.push({
+              id: crypto.randomUUID(),
+              serialNumber: radioW,
+              assetTag: assetX,
+              model: 'APX NEXT',
+              category: 'Portable Radio',
+              assignedTo: loginC,
+              status: loginC ? 'assigned' : 'available',
+              location: tabName,
+              notes: '',
+              radioId: combinedRadioId,
+              owner: owner,
+              unit: unit,
+              alias: alias,
+              sourceTab: tabName,
+            });
           }
 
-          const users: User[] = [];
+          if (radioY) {
+            const assetZ = this.getValueByIndex(row, 25);
+            const radioIdAF = this.getValueByIndex(row, 31);
+            const radioIdAG = this.getValueByIndex(row, 32);
+            const combinedRadioId = [radioIdAF, radioIdAG].filter(Boolean).join(', ');
 
-          for (const row of rows) {
-            const name = this.getFlexibleValue(row, ['Owner']) || this.getValueByIndex(row, 1);
-            const apxEmail = this.getValueByIndex(row, 2);
-            const n70Email = this.getValueByIndex(row, 7);
+            const model = loginH ? 'N70' : 'BWC (V700/SVX)';
+            const category = loginH ? 'LTE Radio' : 'Body Worn Camera';
 
-            if (!name && !apxEmail && !n70Email) continue;
+            this.extractedDevices.push({
+              id: crypto.randomUUID(),
+              serialNumber: radioY,
+              assetTag: assetZ,
+              model: model,
+              category: category,
+              assignedTo: loginH,
+              status: loginH ? 'assigned' : 'available',
+              location: tabName,
+              notes: '',
+              radioId: combinedRadioId,
+              owner: owner,
+              unit: unit,
+              alias: alias,
+              sourceTab: tabName,
+            });
+          }
 
-            const primaryEmail = apxEmail || n70Email;
-            const userId = crypto.randomUUID();
-
-            users.push({
-              id: userId,
-              name: name,
+          const primaryEmail = loginC || loginH;
+          if (owner || primaryEmail) {
+            allUsers.push({
+              id: crypto.randomUUID(),
+              name: owner,
               email: primaryEmail,
               department: tabName,
               status: 'active',
               hireDate: '',
               sourceTab: tabName,
             });
-
-            const apxSerial = this.getValueByIndex(row, 22);
-            const apxAsset = this.getValueByIndex(row, 23);
-            const n70Serial = this.getValueByIndex(row, 24);
-            const n70Asset = this.getValueByIndex(row, 25);
-            const radioId1 = this.getValueByIndex(row, 29);
-            const radioId2 = this.getValueByIndex(row, 30);
-            const radioId3 = this.getValueByIndex(row, 31);
-            const radioId4 = this.getValueByIndex(row, 32);
-
-            if (apxSerial || apxAsset) {
-              this.extractedDevices.push({
-                id: crypto.randomUUID(),
-                serialNumber: apxSerial,
-                assetTag: apxAsset,
-                model: 'APX Next',
-                assignedTo: apxEmail,
-                status: apxEmail ? 'assigned' : 'available',
-                location: tabName,
-                notes: '',
-                radioId: [radioId1, radioId2].filter(Boolean).join(', '),
-                sourceTab: tabName,
-              });
-            }
-
-            if (n70Serial || n70Asset) {
-              this.extractedDevices.push({
-                id: crypto.randomUUID(),
-                serialNumber: n70Serial,
-                assetTag: n70Asset,
-                model: 'N70',
-                assignedTo: n70Email,
-                status: n70Email ? 'assigned' : 'available',
-                location: tabName,
-                notes: '',
-                radioId: [radioId3, radioId4].filter(Boolean).join(', '),
-                sourceTab: tabName,
-              });
-            }
           }
-
-          console.log(`Successfully processed ${users.length} users from ${tabName} tab`);
-          return users;
-        } catch (error) {
-          if (error instanceof Error) {
-            if (error.message.includes('not found')) {
-              console.error(`Tab ${tabName} not found in spreadsheet`);
-            } else if (error.message.includes('header')) {
-              console.error(`Tab ${tabName} missing headers - ensure Row 3 has headers`);
-            } else {
-              console.error(`Tab ${tabName} error:`, error.message);
-            }
-          }
-          return [];
         }
-      })
-    );
 
-    const allUserArrays = results.map((result) =>
-      result.status === 'fulfilled' ? result.value : []
-    );
-
-    const flatUsers = allUserArrays.flat();
+        console.log(`Tab ${tabName}: Successfully processed`);
+      } catch (error) {
+        console.error(`CRITICAL ERROR in tab ${tabName}:`, error);
+        if (error instanceof Error) {
+          console.error(`Error message: ${error.message}`);
+          console.error(`Error stack: ${error.stack}`);
+        }
+      }
+    }
 
     const userMap = new Map<string, User>();
     const deduplicatedUsers: User[] = [];
 
-    for (const user of flatUsers) {
+    for (const user of allUsers) {
       const userKey = user.email || user.name;
 
       if (userMap.has(userKey)) {
@@ -150,13 +150,13 @@ export class DataService {
       }
     }
 
-    console.log(`Total users loaded: ${deduplicatedUsers.length} (from ${flatUsers.length} raw entries)`);
-    console.log(`Total devices extracted: ${this.extractedDevices.length}`);
+    console.log(`TOTAL USERS: ${deduplicatedUsers.length} (from ${allUsers.length} raw entries)`);
+    console.log(`TOTAL DEVICES EXTRACTED: ${this.extractedDevices.length}`);
     return deduplicatedUsers;
   }
 
   static async fetchDevices(accessToken: string): Promise<Device[]> {
-    console.log(`Returning ${this.extractedDevices.length} devices extracted from regional tabs`);
+    console.log(`Returning ${this.extractedDevices.length} devices extracted from tabs`);
     return [...this.extractedDevices];
   }
 
@@ -184,7 +184,7 @@ export class DataService {
   }
 
   static async updateUser(accessToken: string, id: string, updates: Partial<User>): Promise<void> {
-    const targetTabs = ['Central', 'Northeast', 'Southeast', 'West', 'Federal', 'Software'];
+    const targetTabs = ['Presales', 'Central', 'Northeast', 'Southeast', 'West', 'Federal', 'Software'];
 
     for (const tabName of targetTabs) {
       try {
@@ -211,7 +211,7 @@ export class DataService {
   }
 
   static async deleteUser(accessToken: string, id: string): Promise<void> {
-    const targetTabs = ['Central', 'Northeast', 'Southeast', 'West', 'Federal', 'Software'];
+    const targetTabs = ['Presales', 'Central', 'Northeast', 'Southeast', 'West', 'Federal', 'Software'];
 
     for (const tabName of targetTabs) {
       try {
@@ -239,6 +239,7 @@ export class DataService {
   static async addDevice(accessToken: string, device: Omit<Device, 'id'>): Promise<Device> {
     const newDevice: Device = {
       id: crypto.randomUUID(),
+      category: device.category || 'Portable Radio',
       ...device,
     };
 
