@@ -1,144 +1,116 @@
-import { createClient } from '@supabase/supabase-js';
-import type { ProvisioningSteps } from './types';
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-export interface ProvisioningRecord {
-  id: string;
-  user_email: string;
-  user_name: string;
-  apx_next: Record<string, boolean>;
-  apx_n70: Record<string, boolean>;
-  phone_apps: Record<string, boolean>;
-  svx_v700: Record<string, boolean>;
-  created_at: string;
-  updated_at: string;
-}
+import { getGoogleSheetDoc } from './googleSheets';
+import type { User } from './types';
 
 export class ProvisioningService {
-  static async getProvisioningData(userEmail: string): Promise<ProvisioningSteps | null> {
-    const { data, error } = await supabase
-      .from('user_provisioning')
-      .select('*')
-      .eq('user_email', userEmail)
-      .maybeSingle();
-
-    if (error) {
-      console.error('Error fetching provisioning data:', error);
-      return null;
-    }
-
-    if (!data) {
-      return null;
-    }
-
-    return {
-      apxNext: data.apx_next,
-      apxN70: data.apx_n70,
-      phoneApps: data.phone_apps,
-      svxV700: data.svx_v700,
+  private static getColumnIndexForStep(
+    section: 'apxNext' | 'apxN70' | 'phoneApps' | 'svxV700',
+    stepKey: string
+  ): number {
+    // APX Next: AM-AU (38-46)
+    const apxNextMap: Record<string, number> = {
+      createNextUser: 38,
+      provisionP1UserRoles: 39,
+      provisionP1ConcurrentLogins: 40,
+      p1ProvisionUnitId: 41,
+      p1UnitPreassignment: 42,
+      placeUnitOnDutyPsap: 43,
+      awareAddDevice: 44,
+      p1AddDevice: 45,
+      awareDataSharing: 46,
     };
-  }
 
-  static async getAllProvisioningData(): Promise<Map<string, ProvisioningSteps>> {
-    const { data, error } = await supabase
-      .from('user_provisioning')
-      .select('*');
+    // APX N70: AV-BD (47-55)
+    const apxN70Map: Record<string, number> = {
+      createNextUser: 47,
+      provisionP1UserRoles: 48,
+      provisionP1ConcurrentLogins: 49,
+      p1ProvisionUnitId: 50,
+      p1UnitPreassignment: 51,
+      placeUnitOnDutyPsap: 52,
+      awareAddDevice: 53,
+      p1AddDevice: 54,
+      awareDataSharing: 55,
+    };
 
-    if (error) {
-      console.error('Error fetching all provisioning data:', error);
-      return new Map();
+    // Phone Apps: BE-BH (56-59)
+    const phoneAppsMap: Record<string, number> = {
+      responderCoreIdPhone: 56,
+      responderCoreIdPd: 57,
+      rapidDeployMapping: 58,
+      rapidDeployLightning: 59,
+    };
+
+    // SVX/V700: BI-BJ (60-61)
+    const svxV700Map: Record<string, number> = {
+      setupInDeviceManagement: 60,
+      checkedOutToUser: 61,
+    };
+
+    switch (section) {
+      case 'apxNext':
+        return apxNextMap[stepKey];
+      case 'apxN70':
+        return apxN70Map[stepKey];
+      case 'phoneApps':
+        return phoneAppsMap[stepKey];
+      case 'svxV700':
+        return svxV700Map[stepKey];
+      default:
+        throw new Error(`Unknown section: ${section}`);
     }
-
-    const provisioningMap = new Map<string, ProvisioningSteps>();
-    for (const record of data) {
-      provisioningMap.set(record.user_email, {
-        apxNext: record.apx_next,
-        apxN70: record.apx_n70,
-        phoneApps: record.phone_apps,
-        svxV700: record.svx_v700,
-      });
-    }
-
-    return provisioningMap;
-  }
-
-  static async updateProvisioningData(
-    userEmail: string,
-    userName: string,
-    steps: ProvisioningSteps
-  ): Promise<boolean> {
-    const { error } = await supabase
-      .from('user_provisioning')
-      .upsert({
-        user_email: userEmail,
-        user_name: userName,
-        apx_next: steps.apxNext,
-        apx_n70: steps.apxN70,
-        phone_apps: steps.phoneApps,
-        svx_v700: steps.svxV700,
-        updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'user_email'
-      });
-
-    if (error) {
-      console.error('Error updating provisioning data:', error);
-      return false;
-    }
-
-    return true;
   }
 
   static async updateProvisioningStep(
-    userEmail: string,
-    userName: string,
+    accessToken: string,
+    user: User,
     section: 'apxNext' | 'apxN70' | 'phoneApps' | 'svxV700',
     stepKey: string,
     value: boolean
   ): Promise<boolean> {
-    const currentData = await this.getProvisioningData(userEmail);
+    try {
+      const doc = await getGoogleSheetDoc(accessToken);
+      const sourceTab = user.sourceTab?.split(',')[0].trim() || 'Software';
+      const sheet = doc.sheetsByTitle[sourceTab];
 
-    const steps: ProvisioningSteps = currentData || {
-      apxNext: {
-        createNextUser: false,
-        provisionP1UserRoles: false,
-        provisionP1ConcurrentLogins: false,
-        p1ProvisionUnitId: false,
-        p1UnitPreassignment: false,
-        placeUnitOnDutyPsap: false,
-        awareAddDevice: false,
-        p1AddDevice: false,
-        awareDataSharing: false,
-      },
-      apxN70: {
-        createNextUser: false,
-        provisionP1UserRoles: false,
-        provisionP1ConcurrentLogins: false,
-        p1ProvisionUnitId: false,
-        p1UnitPreassignment: false,
-        placeUnitOnDutyPsap: false,
-        awareAddDevice: false,
-        p1AddDevice: false,
-        awareDataSharing: false,
-      },
-      phoneApps: {
-        responderCoreIdPhone: false,
-        responderCoreIdPd: false,
-        rapidDeployMapping: false,
-        rapidDeployLightning: false,
-      },
-      svxV700: {
-        setupInDeviceManagement: false,
-        checkedOutToUser: false,
+      if (!sheet) {
+        console.error(`Sheet "${sourceTab}" not found`);
+        return false;
       }
-    };
 
-    steps[section][stepKey as keyof typeof steps[typeof section]] = value;
+      await sheet.loadCells();
+      const rows = await sheet.getRows();
 
-    return await this.updateProvisioningData(userEmail, userName, steps);
+      // Find the user's row by matching email or name
+      let userRowIndex = -1;
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const rowEmail = row.get('Next Login (C)') || row.get('N70 Login (H)');
+        const rowName = row.get('Owner (B)');
+
+        if (
+          (user.email && rowEmail === user.email) ||
+          (user.name && rowName === user.name)
+        ) {
+          userRowIndex = row.rowNumber - 1;
+          break;
+        }
+      }
+
+      if (userRowIndex === -1) {
+        console.error(`User not found in sheet: ${user.email || user.name}`);
+        return false;
+      }
+
+      const columnIndex = this.getColumnIndexForStep(section, stepKey);
+      const cell = sheet.getCell(userRowIndex, columnIndex);
+      cell.value = value ? 'TRUE' : '';
+
+      await sheet.saveUpdatedCells();
+      console.log(`Updated ${section}.${stepKey} to ${value} for user ${user.email || user.name}`);
+      return true;
+    } catch (error) {
+      console.error('Error updating provisioning step:', error);
+      return false;
+    }
   }
 }

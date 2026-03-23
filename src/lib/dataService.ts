@@ -90,6 +90,47 @@ export class DataService {
           const radioIdAF = this.getValueByIndex(row, 31);
           const radioIdAG = this.getValueByIndex(row, 32);
 
+          // Provisioning columns: AM to BJ (columns 38-61)
+          // APX Next steps: AM-AU (38-46)
+          const apxNextSteps = {
+            createNextUser: this.getValueByIndex(row, 38) === 'TRUE',
+            provisionP1UserRoles: this.getValueByIndex(row, 39) === 'TRUE',
+            provisionP1ConcurrentLogins: this.getValueByIndex(row, 40) === 'TRUE',
+            p1ProvisionUnitId: this.getValueByIndex(row, 41) === 'TRUE',
+            p1UnitPreassignment: this.getValueByIndex(row, 42) === 'TRUE',
+            placeUnitOnDutyPsap: this.getValueByIndex(row, 43) === 'TRUE',
+            awareAddDevice: this.getValueByIndex(row, 44) === 'TRUE',
+            p1AddDevice: this.getValueByIndex(row, 45) === 'TRUE',
+            awareDataSharing: this.getValueByIndex(row, 46) === 'TRUE',
+          };
+
+          // APX N70 steps: AV-BD (47-55)
+          const apxN70Steps = {
+            createNextUser: this.getValueByIndex(row, 47) === 'TRUE',
+            provisionP1UserRoles: this.getValueByIndex(row, 48) === 'TRUE',
+            provisionP1ConcurrentLogins: this.getValueByIndex(row, 49) === 'TRUE',
+            p1ProvisionUnitId: this.getValueByIndex(row, 50) === 'TRUE',
+            p1UnitPreassignment: this.getValueByIndex(row, 51) === 'TRUE',
+            placeUnitOnDutyPsap: this.getValueByIndex(row, 52) === 'TRUE',
+            awareAddDevice: this.getValueByIndex(row, 53) === 'TRUE',
+            p1AddDevice: this.getValueByIndex(row, 54) === 'TRUE',
+            awareDataSharing: this.getValueByIndex(row, 55) === 'TRUE',
+          };
+
+          // Phone Apps steps: BE-BH (56-59)
+          const phoneAppsSteps = {
+            responderCoreIdPhone: this.getValueByIndex(row, 56) === 'TRUE',
+            responderCoreIdPd: this.getValueByIndex(row, 57) === 'TRUE',
+            rapidDeployMapping: this.getValueByIndex(row, 58) === 'TRUE',
+            rapidDeployLightning: this.getValueByIndex(row, 59) === 'TRUE',
+          };
+
+          // Body Worn Camera steps: BI-BJ (60-61)
+          const svxV700Steps = {
+            setupInDeviceManagement: this.getValueByIndex(row, 60) === 'TRUE',
+            checkedOutToUser: this.getValueByIndex(row, 61) === 'TRUE',
+          };
+
           if (!colW?.trim() && !colX?.trim() && !colY?.trim() && !colZ?.trim()) {
             continue;
           }
@@ -202,6 +243,20 @@ export class DataService {
 
           const primaryEmail = loginC || loginH;
           if (owner || primaryEmail) {
+            // Calculate provisioning status
+            const allSteps = [
+              ...Object.values(apxNextSteps),
+              ...Object.values(apxN70Steps),
+              ...Object.values(phoneAppsSteps),
+              ...Object.values(svxV700Steps),
+            ];
+            const completedSteps = allSteps.filter(Boolean).length;
+            const provisioningStatus = completedSteps === 0
+              ? 'Not Started'
+              : completedSteps === allSteps.length
+              ? 'Completed'
+              : 'In Progress';
+
             allUsers.push({
               id: crypto.randomUUID(),
               name: owner,
@@ -210,11 +265,12 @@ export class DataService {
               status: 'active',
               hireDate: '',
               sourceTab: tabName,
-              provisioningStatus: 'Not Started',
+              provisioningStatus: provisioningStatus,
               provisioningSteps: {
-                stage: false,
-                enroll: false,
-                test: false,
+                apxNext: apxNextSteps,
+                apxN70: apxN70Steps,
+                phoneApps: phoneAppsSteps,
+                svxV700: svxV700Steps,
               },
               apxNextLogin: loginC,
               apxN70Login: loginH,
@@ -261,44 +317,6 @@ export class DataService {
       }
     }
 
-    // Initialize provisioning steps with default values
-    for (const user of deduplicatedUsers) {
-      user.provisioningSteps = {
-        apxNext: {
-          createNextUser: false,
-          provisionP1UserRoles: false,
-          provisionP1ConcurrentLogins: false,
-          p1ProvisionUnitId: false,
-          p1UnitPreassignment: false,
-          placeUnitOnDutyPsap: false,
-          awareAddDevice: false,
-          p1AddDevice: false,
-          awareDataSharing: false,
-        },
-        apxN70: {
-          createNextUser: false,
-          provisionP1UserRoles: false,
-          provisionP1ConcurrentLogins: false,
-          p1ProvisionUnitId: false,
-          p1UnitPreassignment: false,
-          placeUnitOnDutyPsap: false,
-          awareAddDevice: false,
-          p1AddDevice: false,
-          awareDataSharing: false,
-        },
-        phoneApps: {
-          responderCoreIdPhone: false,
-          responderCoreIdPd: false,
-          rapidDeployMapping: false,
-          rapidDeployLightning: false,
-        },
-        svxV700: {
-          setupInDeviceManagement: false,
-          checkedOutToUser: false,
-        }
-      };
-      user.provisioningStatus = 'Not Started';
-    }
 
     console.log(`TOTAL USERS: ${deduplicatedUsers.length} (from ${allUsers.length} raw entries)`);
     console.log(`TOTAL DEVICES EXTRACTED: ${this.extractedDevices.length}`);

@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Search, CheckCircle2, Circle, AlertCircle, TrendingUp, X } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
+import { useAuth } from '../contexts/AuthContext';
 import { ProvisioningService } from '../lib/provisioningService';
 import type { User, ProvisioningSteps } from '../lib/types';
 
 export default function Provisioning() {
   const { users, usersLoading: loading, usersError: error } = useData();
+  const { accessToken } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
@@ -217,6 +219,7 @@ export default function Provisioning() {
       {selectedUser && (
         <ProvisioningDetailModal
           user={selectedUser}
+          accessToken={accessToken}
           onClose={() => setSelectedUser(null)}
         />
       )}
@@ -226,10 +229,11 @@ export default function Provisioning() {
 
 interface ProvisioningDetailModalProps {
   user: User;
+  accessToken: string | null;
   onClose: () => void;
 }
 
-function ProvisioningDetailModal({ user, onClose }: ProvisioningDetailModalProps) {
+function ProvisioningDetailModal({ user, accessToken, onClose }: ProvisioningDetailModalProps) {
   const [steps, setSteps] = useState<ProvisioningSteps>(user.provisioningSteps || {
     apxNext: {
       createNextUser: false,
@@ -270,6 +274,11 @@ function ProvisioningDetailModal({ user, onClose }: ProvisioningDetailModalProps
     stepKey: string,
     currentValue: boolean
   ) => {
+    if (!accessToken) {
+      console.error('No access token available');
+      return;
+    }
+
     const newValue = !currentValue;
 
     setSteps(prev => ({
@@ -281,8 +290,8 @@ function ProvisioningDetailModal({ user, onClose }: ProvisioningDetailModalProps
     }));
 
     await ProvisioningService.updateProvisioningStep(
-      user.email,
-      user.name,
+      accessToken,
+      user,
       section,
       stepKey,
       newValue
