@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Search, CheckCircle2, Circle, AlertCircle, TrendingUp } from 'lucide-react';
+import { Search, CheckCircle2, Circle, AlertCircle, TrendingUp, X } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
+import { ProvisioningService } from '../lib/provisioningService';
 import type { User, ProvisioningSteps } from '../lib/types';
 
 export default function Provisioning() {
@@ -16,12 +17,13 @@ export default function Provisioning() {
 
   const calculateProgress = (steps: ProvisioningSteps | undefined): number => {
     if (!steps) return 0;
+    if (!steps.apxNext || !steps.apxN70 || !steps.phoneApps || !steps.svxV700) return 0;
 
     const allSteps = [
       ...Object.values(steps.apxNext),
       ...Object.values(steps.apxN70),
-      ...Object.values(steps.phoneApps || {}),
-      ...Object.values(steps.svxV700 || {}),
+      ...Object.values(steps.phoneApps),
+      ...Object.values(steps.svxV700),
     ];
 
     const completed = allSteps.filter(Boolean).length;
@@ -228,7 +230,7 @@ interface ProvisioningDetailModalProps {
 }
 
 function ProvisioningDetailModal({ user, onClose }: ProvisioningDetailModalProps) {
-  const steps = user.provisioningSteps || {
+  const [steps, setSteps] = useState<ProvisioningSteps>(user.provisioningSteps || {
     apxNext: {
       createNextUser: false,
       provisionP1UserRoles: false,
@@ -261,17 +263,47 @@ function ProvisioningDetailModal({ user, onClose }: ProvisioningDetailModalProps
       setupInDeviceManagement: false,
       checkedOutToUser: false,
     }
+  });
+
+  const handleStepToggle = async (
+    section: 'apxNext' | 'apxN70' | 'phoneApps' | 'svxV700',
+    stepKey: string,
+    currentValue: boolean
+  ) => {
+    const newValue = !currentValue;
+
+    setSteps(prev => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        [stepKey]: newValue
+      }
+    }));
+
+    await ProvisioningService.updateProvisioningStep(
+      user.email,
+      user.name,
+      section,
+      stepKey,
+      newValue
+    );
   };
 
-  const renderStepSection = (title: string, steps: { key: string; label: string }[], sectionData: any, colorClass: string) => {
-    const completed = steps.filter(s => sectionData[s.key]).length;
-    const percentage = Math.round((completed / steps.length) * 100);
+  const renderStepSection = (
+    title: string,
+    stepsList: { key: string; label: string }[],
+    sectionData: any,
+    colorClass: string,
+    sectionKey: 'apxNext' | 'apxN70' | 'phoneApps' | 'svxV700'
+  ) => {
+    const completed = stepsList.filter(s => sectionData[s.key]).length;
+    const percentage = Math.round((completed / stepsList.length) * 100);
 
     return (
       <div className={`${colorClass} rounded-lg p-4 border`}>
         <div className="flex items-center justify-between mb-3">
           <h4 className="font-semibold text-slate-900">{title}</h4>
-          <span className="text-sm font-medium text-slate-600">{completed}/{steps.length}</span>
+          <span className="text-sm font-medium text-slate-600">{completed}/{stepsList.length}</span>
         </div>
         <div className="w-full bg-white rounded-full h-2 mb-4">
           <div
@@ -280,19 +312,23 @@ function ProvisioningDetailModal({ user, onClose }: ProvisioningDetailModalProps
           />
         </div>
         <div className="space-y-2">
-          {steps.map(step => {
+          {stepsList.map(step => {
             const isComplete = sectionData[step.key];
             return (
-              <div key={step.key} className="flex items-center gap-2 bg-white px-3 py-2 rounded border border-slate-200">
+              <button
+                key={step.key}
+                onClick={() => handleStepToggle(sectionKey, step.key, isComplete)}
+                className="w-full flex items-center gap-2 bg-white px-3 py-2 rounded border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
+              >
                 {isComplete ? (
                   <CheckCircle2 size={16} className="text-green-600 flex-shrink-0" />
                 ) : (
                   <Circle size={16} className="text-slate-300 flex-shrink-0" />
                 )}
-                <span className={`text-sm ${isComplete ? 'text-slate-900' : 'text-slate-500'}`}>
+                <span className={`text-sm text-left ${isComplete ? 'text-slate-900' : 'text-slate-500'}`}>
                   {step.label}
                 </span>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -312,7 +348,7 @@ function ProvisioningDetailModal({ user, onClose }: ProvisioningDetailModalProps
             onClick={onClose}
             className="text-slate-400 hover:text-slate-600 transition-colors"
           >
-            <Circle size={24} />
+            <X size={24} />
           </button>
         </div>
 
@@ -332,7 +368,8 @@ function ProvisioningDetailModal({ user, onClose }: ProvisioningDetailModalProps
                 { key: 'awareDataSharing', label: 'Aware - Data Sharing' }
               ],
               steps.apxNext,
-              'bg-blue-50 border-blue-200'
+              'bg-blue-50 border-blue-200',
+              'apxNext'
             )}
 
             {renderStepSection(
@@ -349,7 +386,8 @@ function ProvisioningDetailModal({ user, onClose }: ProvisioningDetailModalProps
                 { key: 'awareDataSharing', label: 'Aware - Data Sharing' }
               ],
               steps.apxN70,
-              'bg-purple-50 border-purple-200'
+              'bg-purple-50 border-purple-200',
+              'apxN70'
             )}
 
             {renderStepSection(
@@ -361,7 +399,8 @@ function ProvisioningDetailModal({ user, onClose }: ProvisioningDetailModalProps
                 { key: 'rapidDeployLightning', label: 'RapidDeploy Lightning' }
               ],
               steps.phoneApps,
-              'bg-green-50 border-green-200'
+              'bg-green-50 border-green-200',
+              'phoneApps'
             )}
 
             {renderStepSection(
@@ -371,7 +410,8 @@ function ProvisioningDetailModal({ user, onClose }: ProvisioningDetailModalProps
                 { key: 'checkedOutToUser', label: 'Checked out to User' }
               ],
               steps.svxV700,
-              'bg-amber-50 border-amber-200'
+              'bg-amber-50 border-amber-200',
+              'svxV700'
             )}
           </div>
         </div>

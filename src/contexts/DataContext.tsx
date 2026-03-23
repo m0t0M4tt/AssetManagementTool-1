@@ -86,6 +86,29 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       const userData = await DataService.fetchUsers(accessToken);
 
+      const { ProvisioningService } = await import('../lib/provisioningService');
+      const provisioningData = await ProvisioningService.getAllProvisioningData();
+
+      for (const user of userData) {
+        const userProvisioning = provisioningData.get(user.email);
+        if (userProvisioning) {
+          user.provisioningSteps = userProvisioning;
+
+          const apxNextSteps = Object.values(userProvisioning.apxNext);
+          const apxN70Steps = Object.values(userProvisioning.apxN70);
+          const phoneAppsSteps = Object.values(userProvisioning.phoneApps);
+          const svxV700Steps = Object.values(userProvisioning.svxV700);
+          const allSteps = [...apxNextSteps, ...apxN70Steps, ...phoneAppsSteps, ...svxV700Steps];
+          const completedSteps = allSteps.filter(Boolean).length;
+
+          user.provisioningStatus = completedSteps === 0
+            ? 'Not Started'
+            : completedSteps === allSteps.length
+            ? 'Completed'
+            : 'In Progress';
+        }
+      }
+
       setCachedData(cacheKey, userData);
       setUsers(userData);
       return userData;

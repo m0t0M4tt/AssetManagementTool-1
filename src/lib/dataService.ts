@@ -261,55 +261,43 @@ export class DataService {
       }
     }
 
-    // Fetch SET Checklist data and merge with users
-    try {
-      const setChecklistData = await this.fetchSETChecklist(accessToken);
-      for (const user of deduplicatedUsers) {
-        const userRegion = user.department || user.sourceTab;
-        const checklistEntry = setChecklistData.get(userRegion);
-        if (checklistEntry) {
-          user.provisioningSteps = checklistEntry.steps;
-          user.provisioningStatus = checklistEntry.status;
-        } else {
-          user.provisioningSteps = {
-            apxNext: {
-              createNextUser: false,
-              provisionP1UserRoles: false,
-              provisionP1ConcurrentLogins: false,
-              p1ProvisionUnitId: false,
-              p1UnitPreassignment: false,
-              placeUnitOnDutyPsap: false,
-              awareAddDevice: false,
-              p1AddDevice: false,
-              awareDataSharing: false,
-            },
-            apxN70: {
-              createNextUser: false,
-              provisionP1UserRoles: false,
-              provisionP1ConcurrentLogins: false,
-              p1ProvisionUnitId: false,
-              p1UnitPreassignment: false,
-              placeUnitOnDutyPsap: false,
-              awareAddDevice: false,
-              p1AddDevice: false,
-              awareDataSharing: false,
-            },
-            phoneApps: {
-              responderCoreIdPhone: false,
-              responderCoreIdPd: false,
-              rapidDeployMapping: false,
-              rapidDeployLightning: false,
-            },
-            svxV700: {
-              setupInDeviceManagement: false,
-              checkedOutToUser: false,
-            }
-          };
+    // Initialize provisioning steps with default values
+    for (const user of deduplicatedUsers) {
+      user.provisioningSteps = {
+        apxNext: {
+          createNextUser: false,
+          provisionP1UserRoles: false,
+          provisionP1ConcurrentLogins: false,
+          p1ProvisionUnitId: false,
+          p1UnitPreassignment: false,
+          placeUnitOnDutyPsap: false,
+          awareAddDevice: false,
+          p1AddDevice: false,
+          awareDataSharing: false,
+        },
+        apxN70: {
+          createNextUser: false,
+          provisionP1UserRoles: false,
+          provisionP1ConcurrentLogins: false,
+          p1ProvisionUnitId: false,
+          p1UnitPreassignment: false,
+          placeUnitOnDutyPsap: false,
+          awareAddDevice: false,
+          p1AddDevice: false,
+          awareDataSharing: false,
+        },
+        phoneApps: {
+          responderCoreIdPhone: false,
+          responderCoreIdPd: false,
+          rapidDeployMapping: false,
+          rapidDeployLightning: false,
+        },
+        svxV700: {
+          setupInDeviceManagement: false,
+          checkedOutToUser: false,
         }
-      }
-      console.log('SET Checklist data merged with users');
-    } catch (error) {
-      console.warn('Failed to fetch SET Checklist data:', error);
+      };
+      user.provisioningStatus = 'Not Started';
     }
 
     console.log(`TOTAL USERS: ${deduplicatedUsers.length} (from ${allUsers.length} raw entries)`);
@@ -317,108 +305,6 @@ export class DataService {
     return deduplicatedUsers;
   }
 
-  private static async fetchSETChecklist(accessToken: string): Promise<Map<string, { steps: ProvisioningSteps; status: 'Not Started' | 'In Progress' | 'Completed' }>> {
-    const checklistMap = new Map<string, { steps: ProvisioningSteps; status: 'Not Started' | 'In Progress' | 'Completed' }>();
-
-    try {
-      console.log('Fetching SET Checklist tab');
-      const sheet = await this.getSheet(accessToken, 'SET Checklist');
-      const rows = await sheet.getRows();
-
-      console.log(`SET Checklist: Found ${rows.length} rows`);
-
-      const stepNames = [
-        'Create Next User',
-        'Provision P1 User Roles',
-        'Provision P1 Concurrent Logins',
-        'Responder <COREIDPHONE>',
-        'Responder <COREIDPD>',
-        'P1 - Provision Unit ID',
-        'P1 - Unit Preassignment',
-        'Place Unit on Duty PSAP',
-        'Aware - Add Device',
-        'P1 - Add Device',
-        'Aware - Data Sharing'
-      ];
-
-      let currentSection = '';
-      let userEmail = '';
-      const userDataMap = new Map<string, any>();
-
-      for (const row of rows) {
-        const firstCol = this.getValueByIndex(row, 0);
-
-        if (firstCol === 'Next' || firstCol === 'N70') {
-          currentSection = firstCol;
-          continue;
-        }
-
-        if (stepNames.includes(firstCol)) {
-          const stepName = firstCol;
-
-          const regions = ['Presales', 'Central', 'Northeast', 'Southeast', 'West', 'Software', 'Video', 'Federal', 'Field Requests'];
-
-          for (let i = 0; i < regions.length; i++) {
-            const regionValue = this.getValueByIndex(row, i + 1);
-            const isChecked = regionValue === 'TRUE' || regionValue === '✓' || regionValue === 'x' || regionValue?.toLowerCase() === 'true';
-
-            const region = regions[i];
-            const key = `${region}-${currentSection}`;
-
-            if (!userDataMap.has(region)) {
-              userDataMap.set(region, {
-                apxNext: {},
-                apxN70: {}
-              });
-            }
-
-            const userData = userDataMap.get(region);
-            const section = currentSection === 'Next' ? 'apxNext' : 'apxN70';
-
-            const fieldMap: { [key: string]: string } = {
-              'Create Next User': 'createNextUser',
-              'Provision P1 User Roles': 'provisionP1UserRoles',
-              'Provision P1 Concurrent Logins': 'provisionP1ConcurrentLogins',
-              'Responder <COREIDPHONE>': 'responderCoreIdPhone',
-              'Responder <COREIDPD>': 'responderCoreIdPd',
-              'P1 - Provision Unit ID': 'p1ProvisionUnitId',
-              'P1 - Unit Preassignment': 'p1UnitPreassignment',
-              'Place Unit on Duty PSAP': 'placeUnitOnDutyPsap',
-              'Aware - Add Device': 'awareAddDevice',
-              'P1 - Add Device': 'p1AddDevice',
-              'Aware - Data Sharing': 'awareDataSharing'
-            };
-
-            const fieldName = fieldMap[stepName];
-            if (fieldName) {
-              userData[section][fieldName] = isChecked;
-            }
-          }
-        }
-      }
-
-      for (const [region, steps] of userDataMap.entries()) {
-        const allSteps = [...Object.values(steps.apxNext), ...Object.values(steps.apxN70)];
-        const completedCount = allSteps.filter(Boolean).length;
-
-        let status: 'Not Started' | 'In Progress' | 'Completed' = 'Not Started';
-        if (completedCount === allSteps.length) {
-          status = 'Completed';
-        } else if (completedCount > 0) {
-          status = 'In Progress';
-        }
-
-        checklistMap.set(region, { steps, status });
-      }
-
-      console.log(`SET Checklist: Processed ${checklistMap.size} regional entries`);
-    } catch (error) {
-      console.error('Error fetching SET Checklist:', error);
-      throw error;
-    }
-
-    return checklistMap;
-  }
 
   static async fetchDevices(accessToken: string): Promise<Device[]> {
     const tabs = ['Presales', 'Central', 'Northeast', 'Southeast', 'West', 'Federal', 'Software'];
