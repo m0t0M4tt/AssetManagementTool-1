@@ -1,33 +1,26 @@
-import { getGoogleSheetDoc } from './googleSheets';
+import { getSheetWithCustomHeader } from './googleSheets';
 import type { User, Device } from './types';
 
 export class DataService {
   private static async getSheet(accessToken: string, tabName: string) {
-    const doc = await getGoogleSheetDoc(accessToken);
-    const sheet = doc.sheetsByTitle[tabName];
-
-    if (!sheet) {
-      throw new Error(`Sheet tab "${tabName}" not found`);
-    }
-
-    return sheet;
+    return await getSheetWithCustomHeader(accessToken, tabName);
   }
 
   static async fetchUsers(accessToken: string): Promise<User[]> {
     try {
-      const sheet = await this.getSheet(accessToken, 'Directory');
+      const sheet = await this.getSheet(accessToken, 'Haas');
       const rows = await sheet.getRows();
 
       return rows.map(row => ({
-        id: row.get('id') || crypto.randomUUID(),
-        name: row.get('Name') || '',
-        email: row.get('Email') || '',
-        department: row.get('Department') || '',
-        status: row.get('Status') || 'active',
-        hireDate: row.get('hireDate') || '',
+        id: row.get('CAD UNIT') || crypto.randomUUID(),
+        name: row.get('Owner') || '',
+        email: row.get('Login Email') || '',
+        department: row.get('Group') || '',
+        status: 'active',
+        hireDate: '',
       }));
     } catch (error) {
-      console.error('Error fetching users from Directory tab:', error);
+      console.error('Error fetching users from Haas tab:', error);
       throw error;
     }
   }
@@ -36,8 +29,9 @@ export class DataService {
     try {
       const allDevices: Device[] = [];
 
-      const presalesSheet = await this.getSheet(accessToken, 'Presales').catch(() => null);
-      if (presalesSheet) {
+      // Try Presales tab with Row 3 headers
+      try {
+        const presalesSheet = await this.getSheet(accessToken, 'Presales');
         const rows = await presalesSheet.getRows();
         const devices = rows.map(row => ({
           id: row.get('id') || crypto.randomUUID(),
@@ -50,10 +44,13 @@ export class DataService {
           notes: row.get('notes') || '',
         }));
         allDevices.push(...devices);
+      } catch (presalesError) {
+        console.warn('Presales tab not found or missing Row 3 headers, skipping:', presalesError);
       }
 
-      const formResponsesSheet = await this.getSheet(accessToken, 'Form Responses').catch(() => null);
-      if (formResponsesSheet) {
+      // Try Form Responses tab with Row 3 headers
+      try {
+        const formResponsesSheet = await this.getSheet(accessToken, 'Form Responses');
         const rows = await formResponsesSheet.getRows();
         const devices = rows.map(row => ({
           id: row.get('id') || crypto.randomUUID(),
@@ -66,6 +63,8 @@ export class DataService {
           notes: row.get('notes') || '',
         }));
         allDevices.push(...devices);
+      } catch (formError) {
+        console.warn('Form Responses tab not found or missing Row 3 headers, skipping:', formError);
       }
 
       return allDevices;
@@ -77,7 +76,7 @@ export class DataService {
 
   static async addUser(accessToken: string, user: Omit<User, 'id'>): Promise<User> {
     try {
-      const sheet = await this.getSheet(accessToken, 'Directory');
+      const sheet = await this.getSheet(accessToken, 'Haas');
 
       const newUser: User = {
         id: crypto.randomUUID(),
@@ -85,49 +84,45 @@ export class DataService {
       };
 
       await sheet.addRow({
-        id: newUser.id,
-        Name: newUser.name,
-        Email: newUser.email,
-        Department: newUser.department,
-        Status: newUser.status,
-        hireDate: newUser.hireDate,
+        'CAD UNIT': newUser.id,
+        'Owner': newUser.name,
+        'Login Email': newUser.email,
+        'Group': newUser.department,
       });
 
       return newUser;
     } catch (error) {
-      console.error('Error adding user to Directory tab:', error);
+      console.error('Error adding user to Haas tab:', error);
       throw error;
     }
   }
 
   static async updateUser(accessToken: string, id: string, updates: Partial<User>): Promise<void> {
     try {
-      const sheet = await this.getSheet(accessToken, 'Directory');
+      const sheet = await this.getSheet(accessToken, 'Haas');
       const rows = await sheet.getRows();
-      const row = rows.find(r => r.get('id') === id);
+      const row = rows.find(r => r.get('CAD UNIT') === id);
 
       if (!row) {
         throw new Error(`User with id ${id} not found`);
       }
 
-      Object.keys(updates).forEach(key => {
-        if (key !== 'id') {
-          row.set(key, updates[key as keyof User] as string);
-        }
-      });
+      if (updates.name) row.set('Owner', updates.name);
+      if (updates.email) row.set('Login Email', updates.email);
+      if (updates.department) row.set('Group', updates.department);
 
       await row.save();
     } catch (error) {
-      console.error('Error updating user in Directory tab:', error);
+      console.error('Error updating user in Haas tab:', error);
       throw error;
     }
   }
 
   static async deleteUser(accessToken: string, id: string): Promise<void> {
     try {
-      const sheet = await this.getSheet(accessToken, 'Directory');
+      const sheet = await this.getSheet(accessToken, 'Haas');
       const rows = await sheet.getRows();
-      const row = rows.find(r => r.get('id') === id);
+      const row = rows.find(r => r.get('CAD UNIT') === id);
 
       if (!row) {
         throw new Error(`User with id ${id} not found`);
@@ -135,7 +130,7 @@ export class DataService {
 
       await row.delete();
     } catch (error) {
-      console.error('Error deleting user from Directory tab:', error);
+      console.error('Error deleting user from Haas tab:', error);
       throw error;
     }
   }
