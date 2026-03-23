@@ -3,8 +3,6 @@ export interface ProvisioningSteps {
     createNextUser: boolean;
     provisionP1UserRoles: boolean;
     provisionP1ConcurrentLogins: boolean;
-    responderCoreIdPhone: boolean;
-    responderCoreIdPd: boolean;
     p1ProvisionUnitId: boolean;
     p1UnitPreassignment: boolean;
     placeUnitOnDutyPsap: boolean;
@@ -22,6 +20,16 @@ export interface ProvisioningSteps {
     awareAddDevice: boolean;
     p1AddDevice: boolean;
     awareDataSharing: boolean;
+  };
+  phoneApps: {
+    responderCoreIdPhone: boolean;
+    responderCoreIdPd: boolean;
+    rapidDeployMapping: boolean;
+    rapidDeployLightning: boolean;
+  };
+  svxV700: {
+    setupInDeviceManagement: boolean;
+    checkedOutToUser: boolean;
   };
 }
 

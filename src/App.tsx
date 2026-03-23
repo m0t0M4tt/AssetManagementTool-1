@@ -6,6 +6,7 @@ import Sidebar, { PageType } from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import UserDirectory from './components/UserDirectory';
 import Devices from './components/Devices';
+import Provisioning from './components/Provisioning';
 import { Login } from './components/Login';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -41,6 +42,8 @@ function AppContent() {
     currentPage = 'directory';
   } else if (pathname === '/devices') {
     currentPage = 'devices';
+  } else if (pathname === '/provisioning') {
+    currentPage = 'provisioning';
   }
 
   function renderPage() {
@@ -51,6 +54,8 @@ function AppContent() {
         return <UserDirectory />;
       case 'devices':
         return <Devices key={currentPath} />;
+      case 'provisioning':
+        return <Provisioning />;
       default:
         return <Dashboard />;
     }

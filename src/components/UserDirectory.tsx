@@ -335,8 +335,6 @@ export default function UserDirectory() {
               createNextUser: false,
               provisionP1UserRoles: false,
               provisionP1ConcurrentLogins: false,
-              responderCoreIdPhone: false,
-              responderCoreIdPd: false,
               p1ProvisionUnitId: false,
               p1UnitPreassignment: false,
               placeUnitOnDutyPsap: false,
@@ -354,6 +352,16 @@ export default function UserDirectory() {
               awareAddDevice: false,
               p1AddDevice: false,
               awareDataSharing: false,
+            },
+            phoneApps: {
+              responderCoreIdPhone: false,
+              responderCoreIdPd: false,
+              rapidDeployMapping: false,
+              rapidDeployLightning: false,
+            },
+            svxV700: {
+              setupInDeviceManagement: false,
+              checkedOutToUser: false,
             }
           }}
           onClose={() => setViewingUser(null)}

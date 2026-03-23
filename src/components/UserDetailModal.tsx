@@ -21,7 +21,9 @@ export default function UserDetailModal({ user, devices, provisioningSteps, onCl
 
   const apxNextSteps = Object.values(provisioningSteps.apxNext);
   const apxN70Steps = Object.values(provisioningSteps.apxN70);
-  const allSteps = [...apxNextSteps, ...apxN70Steps];
+  const phoneAppsSteps = Object.values(provisioningSteps.phoneApps || {});
+  const svxV700Steps = Object.values(provisioningSteps.svxV700 || {});
+  const allSteps = [...apxNextSteps, ...apxN70Steps, ...phoneAppsSteps, ...svxV700Steps];
   const completedSteps = allSteps.filter(Boolean).length;
   const provisioningStatus = completedSteps === 0 ? 'Not Started' : completedSteps === allSteps.length ? 'Completed' : 'In Progress';
 
@@ -288,8 +290,6 @@ export default function UserDetailModal({ user, devices, provisioningSteps, onCl
                       { key: 'createNextUser', label: 'Create Next User' },
                       { key: 'provisionP1UserRoles', label: 'Provision P1 User Roles' },
                       { key: 'provisionP1ConcurrentLogins', label: 'Provision P1 Concurrent Logins' },
-                      { key: 'responderCoreIdPhone', label: 'Responder <COREIDPHONE>' },
-                      { key: 'responderCoreIdPd', label: 'Responder <COREIDPD>' },
                       { key: 'p1ProvisionUnitId', label: 'P1 - Provision Unit ID' },
                       { key: 'p1UnitPreassignment', label: 'P1 - Unit Preassignment' },
                       { key: 'placeUnitOnDutyPsap', label: 'Place Unit on Duty PSAP' },
@@ -332,6 +332,62 @@ export default function UserDetailModal({ user, devices, provisioningSteps, onCl
                       { key: 'awareDataSharing', label: 'Aware - Data Sharing' }
                     ].map(step => {
                       const isComplete = provisioningSteps.apxN70[step.key as keyof typeof provisioningSteps.apxN70];
+                      return (
+                        <div key={step.key} className="flex items-center gap-2 bg-white px-3 py-2 rounded border border-slate-200">
+                          {isComplete ? (
+                            <CheckCircle2 size={16} className="text-green-600 flex-shrink-0" />
+                          ) : (
+                            <Circle size={16} className="text-slate-300 flex-shrink-0" />
+                          )}
+                          <span className={`text-sm ${isComplete ? 'text-slate-900' : 'text-slate-500'}`}>
+                            {step.label}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                  <h4 className="font-semibold text-green-900 mb-3 flex items-center gap-2">
+                    <Radio size={18} className="text-green-600" />
+                    Phone Applications
+                  </h4>
+                  <div className="space-y-2">
+                    {[
+                      { key: 'responderCoreIdPhone', label: 'Responder <COREIDPHONE>' },
+                      { key: 'responderCoreIdPd', label: 'Responder <COREIDPD>' },
+                      { key: 'rapidDeployMapping', label: 'RapidDeploy Mapping' },
+                      { key: 'rapidDeployLightning', label: 'RapidDeploy Lightning' }
+                    ].map(step => {
+                      const isComplete = provisioningSteps.phoneApps?.[step.key as keyof typeof provisioningSteps.phoneApps];
+                      return (
+                        <div key={step.key} className="flex items-center gap-2 bg-white px-3 py-2 rounded border border-slate-200">
+                          {isComplete ? (
+                            <CheckCircle2 size={16} className="text-green-600 flex-shrink-0" />
+                          ) : (
+                            <Circle size={16} className="text-slate-300 flex-shrink-0" />
+                          )}
+                          <span className={`text-sm ${isComplete ? 'text-slate-900' : 'text-slate-500'}`}>
+                            {step.label}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
+                  <h4 className="font-semibold text-amber-900 mb-3 flex items-center gap-2">
+                    <Radio size={18} className="text-amber-600" />
+                    SVX/V700
+                  </h4>
+                  <div className="space-y-2">
+                    {[
+                      { key: 'setupInDeviceManagement', label: 'Setup in Device Management' },
+                      { key: 'checkedOutToUser', label: 'Checked out to User' }
+                    ].map(step => {
+                      const isComplete = provisioningSteps.svxV700?.[step.key as keyof typeof provisioningSteps.svxV700];
                       return (
                         <div key={step.key} className="flex items-center gap-2 bg-white px-3 py-2 rounded border border-slate-200">
                           {isComplete ? (

@@ -1,7 +1,7 @@
-import { LayoutDashboard, Users, Package, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, Package, LogOut, ClipboardCheck } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
-export type PageType = 'dashboard' | 'directory' | 'devices';
+export type PageType = 'dashboard' | 'directory' | 'devices' | 'provisioning';
 
 interface SidebarProps {
   currentPage: PageType;
@@ -15,6 +15,7 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
     { id: 'dashboard' as PageType, label: 'Dashboard', icon: LayoutDashboard },
     { id: 'directory' as PageType, label: 'User Directory', icon: Users },
     { id: 'devices' as PageType, label: 'Devices', icon: Package },
+    { id: 'provisioning' as PageType, label: 'Provisioning', icon: ClipboardCheck },
   ];
 
   const handleLogout = () => {
