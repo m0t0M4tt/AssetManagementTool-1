@@ -31,6 +31,7 @@ export default function Devices() {
       status: formData.get('status') as string,
       location: formData.get('location') as string,
       notes: formData.get('notes') as string,
+      radioId: formData.get('radioId') as string,
     };
 
     try {
@@ -53,6 +54,7 @@ export default function Devices() {
       status: formData.get('status') as string,
       location: formData.get('location') as string,
       notes: formData.get('notes') as string,
+      radioId: formData.get('radioId') as string,
     };
 
     try {
@@ -137,6 +139,7 @@ export default function Devices() {
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Asset Tag</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Model</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Assigned To</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Radio ID</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Status</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-slate-700">Location</th>
               <th className="px-6 py-3 text-right text-sm font-semibold text-slate-700">Actions</th>
@@ -149,6 +152,7 @@ export default function Devices() {
                 <td className="px-6 py-4 text-sm text-slate-600">{device.assetTag}</td>
                 <td className="px-6 py-4 text-sm text-slate-600">{device.model}</td>
                 <td className="px-6 py-4 text-sm text-slate-600">{device.assignedTo || '-'}</td>
+                <td className="px-6 py-4 text-sm text-slate-600">{device.radioId || '-'}</td>
                 <td className="px-6 py-4">
                   <span
                     className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
@@ -302,6 +306,16 @@ function DeviceFormModal({ title, device, onSubmit, onClose }: DeviceFormModalPr
               name="location"
               defaultValue={device?.location}
               required
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Radio ID</label>
+            <input
+              type="text"
+              name="radioId"
+              defaultValue={device?.radioId}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>

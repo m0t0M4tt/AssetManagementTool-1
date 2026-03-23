@@ -17,6 +17,8 @@ export interface Device {
   status: string;
   location: string;
   notes: string;
+  radioId?: string;
+  sourceTab?: string;
 }
 
 export interface DashboardStats {

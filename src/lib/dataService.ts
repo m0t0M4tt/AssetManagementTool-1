@@ -14,19 +14,23 @@ export class DataService {
     return '';
   }
 
-  static async fetchUsers(accessToken: string): Promise<User[]> {
-    const tabs = [
-      'Haas',
-      'Presales',
-      'Central',
-      'Northeast',
-      'Southeast',
-      'West',
-      'Federal',
-      'Software'
-    ];
+  private static getValueByIndex(row: any, index: number): string {
+    try {
+      const values = row._rawData || [];
+      return values[index] || '';
+    } catch {
+      return '';
+    }
+  }
 
-    console.log('Starting parallel fetch for all tabs...');
+  private static extractedDevices: Device[] = [];
+
+  static async fetchUsers(accessToken: string): Promise<User[]> {
+    const tabs = ['Central', 'Northeast', 'Southeast', 'West', 'Federal', 'Software'];
+
+    console.log('Starting parallel fetch for regional tabs...');
+
+    this.extractedDevices = [];
 
     const results = await Promise.allSettled(
       tabs.map(async (tabName) => {
@@ -45,22 +49,63 @@ export class DataService {
           const users: User[] = [];
 
           for (const row of rows) {
-            const email = this.getFlexibleValue(row, ['Login Email', 'Email', 'email']);
-            const name = this.getFlexibleValue(row, ['Owner', 'Name', 'User', 'name']);
-            const group = this.getFlexibleValue(row, ['Group', 'Territory', 'Department', 'group']) || tabName;
-            const cadUnit = this.getFlexibleValue(row, ['CAD UNIT', 'ID', 'id']);
+            const name = this.getFlexibleValue(row, ['Owner']) || this.getValueByIndex(row, 1);
+            const apxEmail = this.getValueByIndex(row, 2);
+            const n70Email = this.getValueByIndex(row, 7);
 
-            if (!email && !name) continue;
+            if (!name && !apxEmail && !n70Email) continue;
+
+            const primaryEmail = apxEmail || n70Email;
+            const userId = crypto.randomUUID();
 
             users.push({
-              id: cadUnit || crypto.randomUUID(),
+              id: userId,
               name: name,
-              email: email,
-              department: group,
+              email: primaryEmail,
+              department: tabName,
               status: 'active',
               hireDate: '',
               sourceTab: tabName,
             });
+
+            const apxSerial = this.getValueByIndex(row, 22);
+            const apxAsset = this.getValueByIndex(row, 23);
+            const n70Serial = this.getValueByIndex(row, 24);
+            const n70Asset = this.getValueByIndex(row, 25);
+            const radioId1 = this.getValueByIndex(row, 29);
+            const radioId2 = this.getValueByIndex(row, 30);
+            const radioId3 = this.getValueByIndex(row, 31);
+            const radioId4 = this.getValueByIndex(row, 32);
+
+            if (apxSerial || apxAsset) {
+              this.extractedDevices.push({
+                id: crypto.randomUUID(),
+                serialNumber: apxSerial,
+                assetTag: apxAsset,
+                model: 'APX Next',
+                assignedTo: apxEmail,
+                status: apxEmail ? 'assigned' : 'available',
+                location: tabName,
+                notes: '',
+                radioId: [radioId1, radioId2].filter(Boolean).join(', '),
+                sourceTab: tabName,
+              });
+            }
+
+            if (n70Serial || n70Asset) {
+              this.extractedDevices.push({
+                id: crypto.randomUUID(),
+                serialNumber: n70Serial,
+                assetTag: n70Asset,
+                model: 'N70',
+                assignedTo: n70Email,
+                status: n70Email ? 'assigned' : 'available',
+                location: tabName,
+                notes: '',
+                radioId: [radioId3, radioId4].filter(Boolean).join(', '),
+                sourceTab: tabName,
+              });
+            }
           }
 
           console.log(`Successfully processed ${users.length} users from ${tabName} tab`);
@@ -106,62 +151,18 @@ export class DataService {
     }
 
     console.log(`Total users loaded: ${deduplicatedUsers.length} (from ${flatUsers.length} raw entries)`);
+    console.log(`Total devices extracted: ${this.extractedDevices.length}`);
     return deduplicatedUsers;
   }
 
   static async fetchDevices(accessToken: string): Promise<Device[]> {
-    try {
-      const allDevices: Device[] = [];
-
-      // Try Presales tab with Row 3 headers
-      try {
-        const presalesSheet = await this.getSheet(accessToken, 'Presales');
-        const rows = await presalesSheet.getRows();
-        const devices = rows.map(row => ({
-          id: row.get('id') || crypto.randomUUID(),
-          serialNumber: row.get('Serial Number') || '',
-          assetTag: row.get('assetTag') || '',
-          model: row.get('Model') || '',
-          assignedTo: row.get('Assigned To') || '',
-          status: row.get('status') || 'available',
-          location: row.get('location') || '',
-          notes: row.get('notes') || '',
-        }));
-        allDevices.push(...devices);
-      } catch (presalesError) {
-        console.warn('Presales tab not found or missing Row 3 headers, skipping:', presalesError);
-      }
-
-      // Try Form Responses tab with Row 3 headers
-      try {
-        const formResponsesSheet = await this.getSheet(accessToken, 'Form Responses');
-        const rows = await formResponsesSheet.getRows();
-        const devices = rows.map(row => ({
-          id: row.get('id') || crypto.randomUUID(),
-          serialNumber: row.get('Serial Number') || '',
-          assetTag: row.get('assetTag') || '',
-          model: row.get('Model') || '',
-          assignedTo: row.get('Assigned To') || '',
-          status: row.get('status') || 'available',
-          location: row.get('location') || '',
-          notes: row.get('notes') || '',
-        }));
-        allDevices.push(...devices);
-      } catch (formError) {
-        console.warn('Form Responses tab not found or missing Row 3 headers, skipping:', formError);
-      }
-
-      return allDevices;
-    } catch (error) {
-      console.error('Error fetching devices from Presales and Form Responses tabs:', error);
-      throw error;
-    }
+    console.log(`Returning ${this.extractedDevices.length} devices extracted from regional tabs`);
+    return [...this.extractedDevices];
   }
 
   static async addUser(accessToken: string, user: Omit<User, 'id'>): Promise<User> {
     try {
-      // Default to adding to the sourceTab if provided, otherwise Haas
-      const targetTab = user.sourceTab || 'Haas';
+      const targetTab = user.sourceTab || 'Central';
       const sheet = await this.getSheet(accessToken, targetTab);
 
       const newUser: User = {
@@ -171,10 +172,8 @@ export class DataService {
       };
 
       await sheet.addRow({
-        'CAD UNIT': newUser.id,
         'Owner': newUser.name,
-        'Login Email': newUser.email,
-        'Group': newUser.department,
+        'APX Email': newUser.email,
       });
 
       return newUser;
@@ -185,29 +184,20 @@ export class DataService {
   }
 
   static async updateUser(accessToken: string, id: string, updates: Partial<User>): Promise<void> {
-    const targetTabs = [
-      'Haas',
-      'Presales',
-      'Central',
-      'Northeast',
-      'Southeast',
-      'West',
-      'Federal',
-      'Software'
-    ];
+    const targetTabs = ['Central', 'Northeast', 'Southeast', 'West', 'Federal', 'Software'];
 
-    // Try to find the user across all tabs
     for (const tabName of targetTabs) {
       try {
         const sheet = await this.getSheet(accessToken, tabName);
         const rows = await sheet.getRows();
-        const row = rows.find(r => r.get('CAD UNIT') === id);
+        const row = rows.find(r => {
+          const apxEmail = this.getValueByIndex(r, 2);
+          const n70Email = this.getValueByIndex(r, 7);
+          return apxEmail === updates.email || n70Email === updates.email;
+        });
 
         if (row) {
           if (updates.name) row.set('Owner', updates.name);
-          if (updates.email) row.set('Login Email', updates.email);
-          if (updates.department) row.set('Group', updates.department);
-
           await row.save();
           console.log(`User ${id} updated in ${tabName} tab`);
           return;
@@ -221,28 +211,22 @@ export class DataService {
   }
 
   static async deleteUser(accessToken: string, id: string): Promise<void> {
-    const targetTabs = [
-      'Haas',
-      'Presales',
-      'Central',
-      'Northeast',
-      'Southeast',
-      'West',
-      'Federal',
-      'Software'
-    ];
+    const targetTabs = ['Central', 'Northeast', 'Southeast', 'West', 'Federal', 'Software'];
 
-    // Try to find and delete the user across all tabs
     for (const tabName of targetTabs) {
       try {
         const sheet = await this.getSheet(accessToken, tabName);
         const rows = await sheet.getRows();
-        const row = rows.find(r => r.get('CAD UNIT') === id);
 
-        if (row) {
-          await row.delete();
-          console.log(`User ${id} deleted from ${tabName} tab`);
-          return;
+        for (const row of rows) {
+          const apxEmail = this.getValueByIndex(row, 2);
+          const n70Email = this.getValueByIndex(row, 7);
+
+          if (row._rawData && (apxEmail || n70Email)) {
+            await row.delete();
+            console.log(`User ${id} deleted from ${tabName} tab`);
+            return;
+          }
         }
       } catch (error) {
         console.warn(`Error checking ${tabName} tab:`, error);
@@ -252,80 +236,41 @@ export class DataService {
     throw new Error(`User with id ${id} not found in any tab`);
   }
 
-  static async addDevice(accessToken: string, device: Omit<Device, 'id'>, targetTab: 'Presales' | 'Form Responses' = 'Presales'): Promise<Device> {
-    try {
-      const sheet = await this.getSheet(accessToken, targetTab);
+  static async addDevice(accessToken: string, device: Omit<Device, 'id'>): Promise<Device> {
+    const newDevice: Device = {
+      id: crypto.randomUUID(),
+      ...device,
+    };
 
-      const newDevice: Device = {
-        id: crypto.randomUUID(),
-        ...device,
-      };
-
-      await sheet.addRow({
-        id: newDevice.id,
-        'Serial Number': newDevice.serialNumber,
-        assetTag: newDevice.assetTag,
-        Model: newDevice.model,
-        'Assigned To': newDevice.assignedTo,
-        status: newDevice.status,
-        location: newDevice.location,
-        notes: newDevice.notes,
-      });
-
-      return newDevice;
-    } catch (error) {
-      console.error(`Error adding device to ${targetTab} tab:`, error);
-      throw error;
-    }
+    this.extractedDevices.push(newDevice);
+    console.log('Device added to extracted devices cache');
+    return newDevice;
   }
 
   static async updateDevice(accessToken: string, id: string, updates: Partial<Device>): Promise<void> {
-    try {
-      for (const tabName of ['Presales', 'Form Responses']) {
-        const sheet = await this.getSheet(accessToken, tabName).catch(() => null);
-        if (!sheet) continue;
+    const deviceIndex = this.extractedDevices.findIndex(d => d.id === id);
 
-        const rows = await sheet.getRows();
-        const row = rows.find(r => r.get('id') === id);
-
-        if (row) {
-          Object.keys(updates).forEach(key => {
-            if (key !== 'id') {
-              row.set(key, updates[key as keyof Device] as string);
-            }
-          });
-
-          await row.save();
-          return;
-        }
-      }
-
-      throw new Error(`Device with id ${id} not found in any tab`);
-    } catch (error) {
-      console.error('Error updating device:', error);
-      throw error;
+    if (deviceIndex !== -1) {
+      this.extractedDevices[deviceIndex] = {
+        ...this.extractedDevices[deviceIndex],
+        ...updates,
+      };
+      console.log('Device updated in extracted devices cache');
+      return;
     }
+
+    throw new Error(`Device with id ${id} not found`);
   }
 
   static async deleteDevice(accessToken: string, id: string): Promise<void> {
-    try {
-      for (const tabName of ['Presales', 'Form Responses']) {
-        const sheet = await this.getSheet(accessToken, tabName).catch(() => null);
-        if (!sheet) continue;
+    const deviceIndex = this.extractedDevices.findIndex(d => d.id === id);
 
-        const rows = await sheet.getRows();
-        const row = rows.find(r => r.get('id') === id);
-
-        if (row) {
-          await row.delete();
-          return;
-        }
-      }
-
-      throw new Error(`Device with id ${id} not found in any tab`);
-    } catch (error) {
-      console.error('Error deleting device:', error);
-      throw error;
+    if (deviceIndex !== -1) {
+      this.extractedDevices.splice(deviceIndex, 1);
+      console.log('Device deleted from extracted devices cache');
+      return;
     }
+
+    throw new Error(`Device with id ${id} not found`);
   }
 }
