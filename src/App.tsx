@@ -10,13 +10,12 @@ import { Login } from './components/Login';
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 function AppContent() {
-  const [currentPage, setCurrentPage] = useState<PageType>('dashboard');
   const { isAuthenticated } = useAuth();
-  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+  const [currentPath, setCurrentPath] = useState(window.location.pathname + window.location.search);
 
   useEffect(() => {
     const handlePopState = () => {
-      setCurrentPath(window.location.pathname);
+      setCurrentPath(window.location.pathname + window.location.search);
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -27,9 +26,20 @@ function AppContent() {
     return <Login />;
   }
 
-  if (currentPath === '/' || currentPath === '/login') {
+  const pathname = window.location.pathname;
+
+  if (pathname === '/' || pathname === '/login') {
     window.history.replaceState({}, '', '/dashboard');
     setCurrentPath('/dashboard');
+  }
+
+  let currentPage: PageType = 'dashboard';
+  if (pathname === '/dashboard') {
+    currentPage = 'dashboard';
+  } else if (pathname === '/directory') {
+    currentPage = 'directory';
+  } else if (pathname === '/devices') {
+    currentPage = 'devices';
   }
 
   function renderPage() {
@@ -39,7 +49,7 @@ function AppContent() {
       case 'directory':
         return <UserDirectory />;
       case 'devices':
-        return <Devices />;
+        return <Devices key={currentPath} />;
       default:
         return <Dashboard />;
     }
@@ -47,7 +57,11 @@ function AppContent() {
 
   return (
     <div className="flex h-screen bg-slate-100">
-      <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
+      <Sidebar currentPage={currentPage} onNavigate={(page) => {
+        const path = page === 'dashboard' ? '/dashboard' : `/${page}`;
+        window.history.pushState({}, '', path);
+        setCurrentPath(path);
+      }} />
       <main className="flex-1 overflow-y-auto p-8">{renderPage()}</main>
     </div>
   );

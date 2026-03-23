@@ -13,9 +13,9 @@ export default function Devices() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const statusParam = params.get('status');
-    if (statusParam && ['available', 'assigned', 'maintenance', 'retired'].includes(statusParam)) {
-      setFilterStatus(statusParam);
+    const filterParam = params.get('filter');
+    if (filterParam && ['available', 'assigned', 'maintenance', 'retired'].includes(filterParam)) {
+      setFilterStatus(filterParam);
     }
   }, []);
 
@@ -148,7 +148,11 @@ export default function Devices() {
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+            filterStatus !== 'all'
+              ? 'border-blue-500 bg-blue-50 font-medium text-blue-900'
+              : 'border-slate-300'
+          }`}
         >
           <option value="all">All Statuses</option>
           <option value="available">Available</option>

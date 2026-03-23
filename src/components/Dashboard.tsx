@@ -31,7 +31,7 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <button
-          onClick={() => navigate('directory')}
+          onClick={() => navigate('/directory')}
           className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-blue-600 text-left hover:shadow-md transition-shadow cursor-pointer"
         >
           <div className="flex items-center justify-between">
@@ -47,7 +47,7 @@ export default function Dashboard() {
         </button>
 
         <button
-          onClick={() => navigate('devices')}
+          onClick={() => navigate('/devices')}
           className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-green-600 text-left hover:shadow-md transition-shadow cursor-pointer"
         >
           <div className="flex items-center justify-between">
@@ -64,7 +64,7 @@ export default function Dashboard() {
         </button>
 
         <button
-          onClick={() => navigate('devices?status=available')}
+          onClick={() => navigate('/devices?filter=available')}
           className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-amber-600 text-left hover:shadow-md transition-shadow cursor-pointer"
         >
           <div className="flex items-center justify-between">
@@ -78,7 +78,7 @@ export default function Dashboard() {
         </button>
 
         <button
-          onClick={() => navigate('devices?status=assigned')}
+          onClick={() => navigate('/devices?filter=assigned')}
           className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-emerald-600 text-left hover:shadow-md transition-shadow cursor-pointer"
         >
           <div className="flex items-center justify-between">
