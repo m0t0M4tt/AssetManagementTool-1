@@ -34,7 +34,7 @@ export default function Header() {
         <SessionTimer />
 
         <button className="flex items-center gap-1 hover:bg-slate-600 px-3 py-2 rounded transition-colors">
-          <HelpCircle size={24} />
+          <HelpCircle size={32} />
         </button>
 
         <div className="relative" ref={dropdownRef}>
