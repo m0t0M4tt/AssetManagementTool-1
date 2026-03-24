@@ -160,6 +160,14 @@ export class DataService {
             v700AssignedInAware: rowData[65]?.toString()?.toUpperCase() === 'TRUE',
           };
 
+          // Debug logging for SVX/V700 data
+          if (rowData[60] || rowData[61] || rowData[62] || rowData[63] || rowData[64] || rowData[65]) {
+            console.log(`SVX/V700 data for ${firstName} ${lastName}:`, {
+              raw: [rowData[60], rowData[61], rowData[62], rowData[63], rowData[64], rowData[65]],
+              parsed: svxV700Steps
+            });
+          }
+
           if (!colW?.trim() && !colX?.trim() && !colY?.trim() && !colZ?.trim()) {
             continue;
           }
