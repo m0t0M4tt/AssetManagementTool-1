@@ -385,12 +385,12 @@ export default function UserDetailModal({ user, devices, provisioningSteps, onCl
                     </h4>
                   <div className="space-y-2">
                     {[
-                      { key: 'setupInDeviceManagement', label: 'Setup in Device Management' },
-                      { key: 'checkedOutToUser', label: 'Checked out to User' },
-                      { key: 'videoCoreIdCreated', label: 'VideoCore ID Created' },
-                      { key: 'videoCoreUserEnabled', label: 'VideoCore User Enabled' },
-                      { key: 'wifiCredsProvisioned', label: 'WiFi Credentials Provisioned' },
-                      { key: 'firmwareUpdated', label: 'Firmware Updated' }
+                      { key: 'svxInDeviceManagement', label: 'SVX in Device Management' },
+                      { key: 'svxCheckedOutToUser', label: 'SVX Checked Out to User' },
+                      { key: 'svxAssignedInAware', label: 'SVX Assigned in Aware' },
+                      { key: 'v700InDeviceManagement', label: 'V700 in Device Management' },
+                      { key: 'v700CheckOutToUser', label: 'V700 Check out to User' },
+                      { key: 'v700AssignedInAware', label: 'V700 Assigned in Aware' }
                     ].map(step => {
                       const isComplete = provisioningSteps.svxV700?.[step.key as keyof typeof provisioningSteps.svxV700];
                       return (

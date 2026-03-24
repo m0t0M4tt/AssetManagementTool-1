@@ -152,12 +152,12 @@ export class DataService {
 
           // Body Worn Camera steps: BI-BN (60-65)
           const svxV700Steps = {
-            setupInDeviceManagement: rowData[60]?.toString()?.toUpperCase() === 'TRUE',
-            checkedOutToUser: rowData[61]?.toString()?.toUpperCase() === 'TRUE',
-            videoCoreIdCreated: rowData[62]?.toString()?.toUpperCase() === 'TRUE',
-            videoCoreUserEnabled: rowData[63]?.toString()?.toUpperCase() === 'TRUE',
-            wifiCredsProvisioned: rowData[64]?.toString()?.toUpperCase() === 'TRUE',
-            firmwareUpdated: rowData[65]?.toString()?.toUpperCase() === 'TRUE',
+            svxInDeviceManagement: rowData[60]?.toString()?.toUpperCase() === 'TRUE',
+            svxCheckedOutToUser: rowData[61]?.toString()?.toUpperCase() === 'TRUE',
+            svxAssignedInAware: rowData[62]?.toString()?.toUpperCase() === 'TRUE',
+            v700InDeviceManagement: rowData[63]?.toString()?.toUpperCase() === 'TRUE',
+            v700CheckOutToUser: rowData[64]?.toString()?.toUpperCase() === 'TRUE',
+            v700AssignedInAware: rowData[65]?.toString()?.toUpperCase() === 'TRUE',
           };
 
           if (!colW?.trim() && !colX?.trim() && !colY?.trim() && !colZ?.trim()) {

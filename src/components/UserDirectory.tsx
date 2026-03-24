@@ -379,12 +379,12 @@ export default function UserDirectory() {
               rapidDeployLightning: false,
             },
             svxV700: {
-              setupInDeviceManagement: false,
-              checkedOutToUser: false,
-              videoCoreIdCreated: false,
-              videoCoreUserEnabled: false,
-              wifiCredsProvisioned: false,
-              firmwareUpdated: false,
+              svxInDeviceManagement: false,
+              svxCheckedOutToUser: false,
+              svxAssignedInAware: false,
+              v700InDeviceManagement: false,
+              v700CheckOutToUser: false,
+              v700AssignedInAware: false,
             }
           }}
           onClose={() => setViewingUser(null)}

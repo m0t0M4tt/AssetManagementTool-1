@@ -28,12 +28,12 @@ export interface ProvisioningSteps {
     rapidDeployLightning: boolean;
   };
   svxV700: {
-    setupInDeviceManagement: boolean;
-    checkedOutToUser: boolean;
-    videoCoreIdCreated: boolean;
-    videoCoreUserEnabled: boolean;
-    wifiCredsProvisioned: boolean;
-    firmwareUpdated: boolean;
+    svxInDeviceManagement: boolean;
+    svxCheckedOutToUser: boolean;
+    svxAssignedInAware: boolean;
+    v700InDeviceManagement: boolean;
+    v700CheckOutToUser: boolean;
+    v700AssignedInAware: boolean;
   };
 }
 
