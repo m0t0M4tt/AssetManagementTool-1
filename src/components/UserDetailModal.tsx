@@ -80,71 +80,71 @@ export default function UserDetailModal({ user, devices, provisioningSteps, onCl
             </div>
           </div>
 
-          {(user.apxNextUnitId || user.apxN70UnitId || user.apxNextAlias || user.apxN70Alias) && (
+          {(user.apxNextUnitId || user.apxN70UnitId) && (
             <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
               <h3 className="text-lg font-semibold text-slate-900 mb-3">CommandCentral Responder</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {(user.apxNextUnitId || user.apxNextAlias) && (
+                {user.apxNextUnitId && (
                   <div className="bg-white rounded-lg p-3 border border-blue-200">
                     <p className="text-xs font-semibold text-blue-700 uppercase mb-2">APX Next</p>
-                    {user.apxNextUnitId && (
-                      <div className="mb-2">
-                        <p className="text-xs font-medium text-slate-500">Device ID (Column N)</p>
-                        <p className="text-slate-900 font-mono text-sm mt-0.5">{user.apxNextUnitId}</p>
-                      </div>
-                    )}
-                    {user.apxNextAlias && (
-                      <div>
-                        <p className="text-xs font-medium text-slate-500">Alias (Column AH)</p>
-                        <p className="text-slate-900 font-mono text-sm mt-0.5">{user.apxNextAlias}</p>
-                      </div>
-                    )}
+                    <div>
+                      <p className="text-xs font-medium text-slate-500">Device ID</p>
+                      <p className="text-slate-900 font-mono text-sm mt-0.5">{user.apxNextUnitId}</p>
+                    </div>
                   </div>
                 )}
-                {(user.apxN70UnitId || user.apxN70Alias) && (
+                {user.apxN70UnitId && (
                   <div className="bg-white rounded-lg p-3 border border-blue-200">
                     <p className="text-xs font-semibold text-blue-700 uppercase mb-2">APX N70</p>
-                    {user.apxN70UnitId && (
-                      <div className="mb-2">
-                        <p className="text-xs font-medium text-slate-500">Device ID (Column O)</p>
-                        <p className="text-slate-900 font-mono text-sm mt-0.5">{user.apxN70UnitId}</p>
-                      </div>
-                    )}
-                    {user.apxN70Alias && (
-                      <div>
-                        <p className="text-xs font-medium text-slate-500">Alias (Column AI)</p>
-                        <p className="text-slate-900 font-mono text-sm mt-0.5">{user.apxN70Alias}</p>
-                      </div>
-                    )}
+                    <div>
+                      <p className="text-xs font-medium text-slate-500">Device ID</p>
+                      <p className="text-slate-900 font-mono text-sm mt-0.5">{user.apxN70UnitId}</p>
+                    </div>
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          {(user.apxNextLogin || user.apxN70Login) && (
+          {(user.apxNextLogin || user.apxN70Login || user.apxNextAlias || user.apxN70Alias) && (
             <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-200">
               <h3 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
                 <Radio size={20} className="text-emerald-600" />
                 CommandCentral Login Information
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {user.apxNextLogin && (
+                {(user.apxNextLogin || user.apxNextAlias) && (
                   <div className="bg-white rounded-lg p-3 border border-emerald-200">
                     <p className="text-xs font-semibold text-emerald-700 uppercase mb-2">APX Next</p>
-                    <div>
-                      <p className="text-xs font-medium text-slate-500">Login (Column C)</p>
-                      <p className="text-slate-900 font-mono text-sm mt-0.5">{user.apxNextLogin}</p>
-                    </div>
+                    {user.apxNextLogin && (
+                      <div className="mb-2">
+                        <p className="text-xs font-medium text-slate-500">Login</p>
+                        <p className="text-slate-900 font-mono text-sm mt-0.5">{user.apxNextLogin}</p>
+                      </div>
+                    )}
+                    {user.apxNextAlias && (
+                      <div>
+                        <p className="text-xs font-medium text-slate-500">Alias</p>
+                        <p className="text-slate-900 font-mono text-sm mt-0.5">{user.apxNextAlias}</p>
+                      </div>
+                    )}
                   </div>
                 )}
-                {user.apxN70Login && (
+                {(user.apxN70Login || user.apxN70Alias) && (
                   <div className="bg-white rounded-lg p-3 border border-emerald-200">
                     <p className="text-xs font-semibold text-emerald-700 uppercase mb-2">APX N70</p>
-                    <div>
-                      <p className="text-xs font-medium text-slate-500">Login (Column H)</p>
-                      <p className="text-slate-900 font-mono text-sm mt-0.5">{user.apxN70Login}</p>
-                    </div>
+                    {user.apxN70Login && (
+                      <div className="mb-2">
+                        <p className="text-xs font-medium text-slate-500">Login</p>
+                        <p className="text-slate-900 font-mono text-sm mt-0.5">{user.apxN70Login}</p>
+                      </div>
+                    )}
+                    {user.apxN70Alias && (
+                      <div>
+                        <p className="text-xs font-medium text-slate-500">Alias</p>
+                        <p className="text-slate-900 font-mono text-sm mt-0.5">{user.apxN70Alias}</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
