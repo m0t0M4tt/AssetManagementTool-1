@@ -89,11 +89,11 @@ export class ProvisioningService {
       await sheet.loadCells('A1:BN500');
       const rows = await sheet.getRows();
 
-      // Find the user's row by matching email or name
+      // Find the user's row by matching email (column C) or name (column B)
       let userRowIndex = -1;
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
-        const rowEmail = row.get('Next Login (C)') || row.get('N70 Login (H)');
+        const rowEmail = row.get('Login Email (C)');
         const rowName = row.get('Owner (B)');
 
         if (
@@ -150,11 +150,11 @@ export class ProvisioningService {
       await sheet.loadCells('A1:BN500');
       const rows = await sheet.getRows();
 
-      // Find the user's row by matching email or name
+      // Find the user's row by matching email (column C) or name (column B)
       let userRowIndex = -1;
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
-        const rowEmail = row.get('Next Login (C)') || row.get('N70 Login (H)');
+        const rowEmail = row.get('Login Email (C)');
         const rowName = row.get('Owner (B)');
 
         if (
