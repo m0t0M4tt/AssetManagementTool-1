@@ -44,10 +44,14 @@ export class ProvisioningService {
       rapidDeployLightning: 59,
     };
 
-    // SVX/V700: BI-BJ (60-61)
+    // Body Worn Camera: BI-BN (60-65)
     const svxV700Map: Record<string, number> = {
-      setupInDeviceManagement: 60,
-      checkedOutToUser: 61,
+      svxInDeviceManagement: 60,
+      svxCheckedOutToUser: 61,
+      svxAssignedInAware: 62,
+      v700InDeviceManagement: 63,
+      v700CheckOutToUser: 64,
+      v700AssignedInAware: 65,
     };
 
     switch (section) {
@@ -81,8 +85,8 @@ export class ProvisioningService {
         return false;
       }
 
-      // Load cells including provisioning columns (A-BJ, columns 0-61)
-      await sheet.loadCells('A1:BJ500');
+      // Load cells including provisioning columns (A-BN, columns 0-65)
+      await sheet.loadCells('A1:BN500');
       const rows = await sheet.getRows();
 
       // Find the user's row by matching email or name
@@ -142,8 +146,8 @@ export class ProvisioningService {
         return false;
       }
 
-      // Load cells including provisioning columns (A-BJ, columns 0-61)
-      await sheet.loadCells('A1:BJ500');
+      // Load cells including provisioning columns (A-BN, columns 0-65)
+      await sheet.loadCells('A1:BN500');
       const rows = await sheet.getRows();
 
       // Find the user's row by matching email or name
