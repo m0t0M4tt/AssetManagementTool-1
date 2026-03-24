@@ -87,22 +87,29 @@ export class ProvisioningService {
 
       // Load cells including provisioning columns (A-BN, columns 0-65)
       await sheet.loadCells('A1:BN500');
-      const rows = await sheet.getRows();
 
-      // Find the user's row by matching email (column C) or name (column B)
+      // Find the user's row by matching email (column C, index 2) or name (column B, index 1)
+      // Headers are in row 3 (index 2), data starts at row 4 (index 3)
+      const HEADER_ROW = 2;
       let userRowIndex = -1;
-      for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
-        const rowEmail = row.get('Login Email - CAD/Responder User');
-        const rowName = row.get('Owner');
+
+      for (let rowIdx = HEADER_ROW + 1; rowIdx < 500; rowIdx++) {
+        const emailCell = sheet.getCell(rowIdx, 2); // Column C
+        const nameCell = sheet.getCell(rowIdx, 1);  // Column B
+
+        const rowEmail = emailCell.value?.toString() || '';
+        const rowName = nameCell.value?.toString() || '';
 
         if (
           (user.email && rowEmail === user.email) ||
           (user.name && rowName === user.name)
         ) {
-          userRowIndex = row.rowNumber - 1;
+          userRowIndex = rowIdx;
           break;
         }
+
+        // Stop if we hit an empty row
+        if (!rowEmail && !rowName) break;
       }
 
       if (userRowIndex === -1) {
@@ -148,22 +155,29 @@ export class ProvisioningService {
 
       // Load cells including provisioning columns (A-BN, columns 0-65)
       await sheet.loadCells('A1:BN500');
-      const rows = await sheet.getRows();
 
-      // Find the user's row by matching email (column C) or name (column B)
+      // Find the user's row by matching email (column C, index 2) or name (column B, index 1)
+      // Headers are in row 3 (index 2), data starts at row 4 (index 3)
+      const HEADER_ROW = 2;
       let userRowIndex = -1;
-      for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
-        const rowEmail = row.get('Login Email - CAD/Responder User');
-        const rowName = row.get('Owner');
+
+      for (let rowIdx = HEADER_ROW + 1; rowIdx < 500; rowIdx++) {
+        const emailCell = sheet.getCell(rowIdx, 2); // Column C
+        const nameCell = sheet.getCell(rowIdx, 1);  // Column B
+
+        const rowEmail = emailCell.value?.toString() || '';
+        const rowName = nameCell.value?.toString() || '';
 
         if (
           (user.email && rowEmail === user.email) ||
           (user.name && rowName === user.name)
         ) {
-          userRowIndex = row.rowNumber - 1;
+          userRowIndex = rowIdx;
           break;
         }
+
+        // Stop if we hit an empty row
+        if (!rowEmail && !rowName) break;
       }
 
       if (userRowIndex === -1) {
