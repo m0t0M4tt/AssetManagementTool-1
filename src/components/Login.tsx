@@ -4,12 +4,16 @@ import { useNavigate } from '../hooks/useNavigate';
 import { LogIn, Shield } from 'lucide-react';
 
 export function Login() {
-  const { setAccessToken, setUserEmail } = useAuth();
+  const { setAccessToken, setRefreshToken, setUserEmail } = useAuth();
   const navigate = useNavigate();
 
   const login = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       setAccessToken(tokenResponse.access_token);
+
+      if ('refresh_token' in tokenResponse && tokenResponse.refresh_token) {
+        setRefreshToken(tokenResponse.refresh_token);
+      }
 
       try {
         const userInfoResponse = await fetch(
@@ -35,6 +39,7 @@ export function Login() {
       console.error('Login failed:', error);
     },
     scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email',
+    flow: 'auth-code',
   });
 
   return (
