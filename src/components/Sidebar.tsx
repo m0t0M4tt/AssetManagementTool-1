@@ -1,5 +1,4 @@
-import { LayoutDashboard, Users, Package, LogOut, ClipboardCheck } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { LayoutDashboard, Users, Package, ClipboardCheck } from 'lucide-react';
 
 export type PageType = 'dashboard' | 'directory' | 'devices' | 'provisioning';
 
@@ -9,7 +8,6 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
-  const { logout } = useAuth();
 
   const menuItems = [
     { id: 'dashboard' as PageType, label: 'Dashboard', icon: LayoutDashboard },
@@ -18,19 +16,9 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
     { id: 'provisioning' as PageType, label: 'Provisioning', icon: ClipboardCheck },
   ];
 
-  const handleLogout = () => {
-    logout();
-    window.location.href = '/';
-  };
-
   return (
     <div className="w-64 bg-slate-900 text-white h-full flex flex-col">
-      <div className="p-6 border-b border-slate-700">
-        <h1 className="text-xl font-bold">CommandCentral</h1>
-        <p className="text-sm text-slate-300 mt-1">Asset Manager</p>
-      </div>
-
-      <nav className="flex-1 p-4">
+      <nav className="flex-1 p-4 pt-6">
         {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentPage === item.id;
@@ -51,16 +39,6 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
           );
         })}
       </nav>
-
-      <div className="p-4 border-t border-slate-700">
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center gap-2 px-4 py-2 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
-        >
-          <LogOut size={16} />
-          <span className="text-sm font-medium">Sign Out</span>
-        </button>
-      </div>
     </div>
   );
 }
