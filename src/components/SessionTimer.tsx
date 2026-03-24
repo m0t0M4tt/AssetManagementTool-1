@@ -12,9 +12,9 @@ export default function SessionTimer() {
   const isLowTime = timeRemaining <= 5 * 60 * 1000;
 
   return (
-    <div className={`text-xs ${isLowTime ? 'text-red-400' : 'text-slate-300'}`}>
-      <div>Session expires in</div>
-      <div className="font-semibold">
+    <div className={`text-xs ${isLowTime ? 'text-red-400' : 'text-slate-300'} text-right`} style={{ height: '43.73px' }}>
+      <div className="leading-tight">Session expires in</div>
+      <div className="font-semibold leading-tight">
         {hours}:{String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
       </div>
     </div>

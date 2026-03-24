@@ -26,8 +26,8 @@ export default function Header() {
 
   return (
     <header className="bg-slate-700 text-white h-20 flex items-center justify-between px-10 text-sm border-b border-slate-600">
-      <div className="flex items-center gap-2">
-        <span className="font-semibold text-base">CommandCentral Asset Manager</span>
+      <div className="flex items-center gap-2" style={{ height: '19px' }}>
+        <span className="font-semibold text-base leading-[19px]">CommandCentral Asset Manager</span>
       </div>
 
       <div className="flex items-center gap-6">
@@ -40,11 +40,11 @@ export default function Header() {
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setShowDropdown(!showDropdown)}
-            className="flex items-center gap-3 hover:bg-slate-600 px-3 py-2 rounded transition-colors"
+            className="flex flex-col items-end gap-1 hover:bg-slate-600 px-3 py-2 rounded transition-colors"
           >
-            <span className="text-slate-300 text-xs">Signed in as</span>
-            <span className="text-slate-100">{userEmail}</span>
-            <ChevronDown size={24} />
+            <span className="text-slate-300 text-xs leading-tight">Signed in as</span>
+            <span className="text-slate-100 leading-tight">{userEmail}</span>
+            <ChevronDown size={24} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ marginLeft: '8px' }} />
           </button>
 
           {showDropdown && (
