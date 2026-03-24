@@ -331,8 +331,12 @@ function ProvisioningDetailModal({ user, accessToken, onClose }: ProvisioningDet
       rapidDeployLightning: false,
     },
     svxV700: {
-      setupInDeviceManagement: false,
-      checkedOutToUser: false,
+      svxInDeviceManagement: false,
+      svxCheckedOutToUser: false,
+      svxAssignedInAware: false,
+      v700InDeviceManagement: false,
+      v700CheckOutToUser: false,
+      v700AssignedInAware: false,
     }
   });
   const [isSaving, setIsSaving] = useState(false);
@@ -517,10 +521,14 @@ function ProvisioningDetailModal({ user, accessToken, onClose }: ProvisioningDet
             )}
 
             {renderStepSection(
-              'SVX/V700',
+              'Body Worn Camera',
               [
-                { key: 'setupInDeviceManagement', label: 'Setup in Device Management' },
-                { key: 'checkedOutToUser', label: 'Checked out to User' }
+                { key: 'svxInDeviceManagement', label: 'SVX in Device Management' },
+                { key: 'svxCheckedOutToUser', label: 'SVX Checked out to User' },
+                { key: 'svxAssignedInAware', label: 'SVX Assigned in Aware' },
+                { key: 'v700InDeviceManagement', label: 'V700 in Device Management' },
+                { key: 'v700CheckOutToUser', label: 'V700 Check out to User' },
+                { key: 'v700AssignedInAware', label: 'V700 Assigned in Aware' }
               ],
               steps.svxV700,
               'bg-amber-50 border-amber-200',
