@@ -88,12 +88,13 @@ export class DataService {
           const owner = rowData[1]?.toString() || '';
           const loginC = rowData[2]?.toString() || '';
           const loginH = rowData[7]?.toString() || '';
+          const responderDeviceId = rowData[10]?.toString() || ''; // Column K
           const unit = rowData[11]?.toString() || '';
           const alias = rowData[12]?.toString() || '';
 
           // Correct column mappings based on user specification:
-          // Column N (index 13) = CAD UNIT (APX Next Device ID)
-          // Column O (index 14) = CAD Unit N70 (N70 Device ID)
+          // Column N (index 13) = CAD UNIT (APX Next Unit ID)
+          // Column O (index 14) = CAD Unit N70 (N70 Unit ID)
           const apxNextUnitId = rowData[13]?.toString() || '';
           const apxN70UnitId = rowData[14]?.toString() || '';
 
@@ -328,6 +329,7 @@ export class DataService {
               apxN70UnitId: apxN70UnitId,
               apxNextAlias: apxNextAlias,
               apxN70Alias: apxN70Alias,
+              responderDeviceId: responderDeviceId,
             });
           }
         }
@@ -365,6 +367,7 @@ export class DataService {
         if (!existingUser.apxN70Login && user.apxN70Login) existingUser.apxN70Login = user.apxN70Login;
         if (!existingUser.apxNextUnitId && user.apxNextUnitId) existingUser.apxNextUnitId = user.apxNextUnitId;
         if (!existingUser.apxN70UnitId && user.apxN70UnitId) existingUser.apxN70UnitId = user.apxN70UnitId;
+        if (!existingUser.responderDeviceId && user.responderDeviceId) existingUser.responderDeviceId = user.responderDeviceId;
 
         // Merge provisioning steps - take the one with more completed steps
         if (user.provisioningSteps) {

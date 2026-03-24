@@ -51,6 +51,7 @@ export interface User {
   apxN70UnitId?: string;
   apxNextAlias?: string;
   apxN70Alias?: string;
+  responderDeviceId?: string;
 }
 
 export interface Device {

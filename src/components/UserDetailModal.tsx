@@ -11,14 +11,6 @@ interface UserDetailModalProps {
 export default function UserDetailModal({ user, devices, provisioningSteps, onClose }: UserDetailModalProps) {
   const assignedDevices = devices.filter(d => d.assignedTo === user.name || d.owner === user.name);
 
-  const ecoIds = assignedDevices
-    .map(d => d.ecoId)
-    .filter((id): id is string => Boolean(id));
-
-  const chicagoIds = assignedDevices
-    .map(d => d.chicagoId)
-    .filter((id): id is string => Boolean(id));
-
   const apxNextSteps = Object.values(provisioningSteps.apxNext);
   const apxN70Steps = Object.values(provisioningSteps.apxN70);
   const phoneAppsSteps = Object.values(provisioningSteps.phoneApps || {});
@@ -80,15 +72,23 @@ export default function UserDetailModal({ user, devices, provisioningSteps, onCl
             </div>
           </div>
 
-          {(user.apxNextUnitId || user.apxN70UnitId) && (
+          {(user.apxNextUnitId || user.apxN70UnitId || user.responderDeviceId) && (
             <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-              <h3 className="text-lg font-semibold text-slate-900 mb-3">CommandCentral Responder</h3>
+              <h3 className="text-lg font-semibold text-slate-900 mb-3">CommandCentral Responder/CAD</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {user.responderDeviceId && (
+                  <div className="bg-white rounded-lg p-3 border border-blue-200">
+                    <p className="text-xs font-semibold text-blue-700 uppercase mb-2">Responder Device ID</p>
+                    <div>
+                      <p className="text-slate-900 font-mono text-sm mt-0.5">{user.responderDeviceId}</p>
+                    </div>
+                  </div>
+                )}
                 {user.apxNextUnitId && (
                   <div className="bg-white rounded-lg p-3 border border-blue-200">
                     <p className="text-xs font-semibold text-blue-700 uppercase mb-2">APX Next</p>
                     <div>
-                      <p className="text-xs font-medium text-slate-500">Device ID</p>
+                      <p className="text-xs font-medium text-slate-500">Unit ID</p>
                       <p className="text-slate-900 font-mono text-sm mt-0.5">{user.apxNextUnitId}</p>
                     </div>
                   </div>
@@ -97,7 +97,7 @@ export default function UserDetailModal({ user, devices, provisioningSteps, onCl
                   <div className="bg-white rounded-lg p-3 border border-blue-200">
                     <p className="text-xs font-semibold text-blue-700 uppercase mb-2">APX N70</p>
                     <div>
-                      <p className="text-xs font-medium text-slate-500">Device ID</p>
+                      <p className="text-xs font-medium text-slate-500">Unit ID</p>
                       <p className="text-slate-900 font-mono text-sm mt-0.5">{user.apxN70UnitId}</p>
                     </div>
                   </div>
@@ -196,11 +196,15 @@ export default function UserDetailModal({ user, devices, provisioningSteps, onCl
                               <span className="ml-2 font-medium text-slate-900">{device.location}</span>
                             </div>
                           )}
+                          {device.alias && (
+                            <div className="col-span-2">
+                              <span className="text-slate-500">Alias:</span>
+                              <span className="ml-2 font-medium text-slate-900">{device.alias}</span>
+                            </div>
+                          )}
                           {device.radioId && (
                             <div className="col-span-2 mt-2 pt-2 border-t border-slate-200 bg-slate-50 -mx-4 -mb-4 px-4 py-2 rounded-b-lg">
-                              <p className="text-xs font-semibold text-slate-600 uppercase mb-1">
-                                Radio IDs {device.model === 'APX Next' ? '(Columns AD-AE)' : device.model === 'APX N70' ? '(Columns AF-AG)' : ''}
-                              </p>
+                              <p className="text-xs font-semibold text-slate-600 uppercase mb-1">Radio IDs</p>
                               <div className="flex flex-wrap gap-2">
                                 {device.ecoId && (
                                   <div className="bg-green-100 px-2 py-1 rounded border border-green-200">
@@ -236,45 +240,10 @@ export default function UserDetailModal({ user, devices, provisioningSteps, onCl
             )}
           </div>
 
-          {(ecoIds.length > 0 || chicagoIds.length > 0) && (
-            <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-              <h3 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                <Radio size={20} className="text-amber-600" />
-                System IDs
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                {ecoIds.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-slate-600 mb-2">ECO ID (1C1)</p>
-                    <div className="space-y-1">
-                      {ecoIds.map((id, idx) => (
-                        <div key={idx} className="bg-white px-3 py-2 rounded border border-slate-200">
-                          <span className="font-mono text-sm text-slate-900">{id}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {chicagoIds.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-slate-600 mb-2">Chicago ID (040)</p>
-                    <div className="space-y-1">
-                      {chicagoIds.map((id, idx) => (
-                        <div key={idx} className="bg-white px-3 py-2 rounded border border-slate-200">
-                          <span className="font-mono text-sm text-slate-900">{id}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
           <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
             <h3 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
               <CheckCircle2 size={20} className="text-green-600" />
-              Provisioning Progress (SET Checklist - Columns AM-BJ)
+              Provisioning Progress (SET Checklist)
             </h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between bg-white px-4 py-3 rounded-lg border border-slate-200">
