@@ -93,8 +93,8 @@ export class ProvisioningService {
       let userRowIndex = -1;
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
-        const rowEmail = row.get('Login Email (C)');
-        const rowName = row.get('Owner (B)');
+        const rowEmail = row.get('Login Email - CAD/Responder User');
+        const rowName = row.get('Owner');
 
         if (
           (user.email && rowEmail === user.email) ||
@@ -154,8 +154,8 @@ export class ProvisioningService {
       let userRowIndex = -1;
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
-        const rowEmail = row.get('Login Email (C)');
-        const rowName = row.get('Owner (B)');
+        const rowEmail = row.get('Login Email - CAD/Responder User');
+        const rowName = row.get('Owner');
 
         if (
           (user.email && rowEmail === user.email) ||
