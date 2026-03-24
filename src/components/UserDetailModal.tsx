@@ -11,13 +11,25 @@ interface UserDetailModalProps {
 export default function UserDetailModal({ user, devices, provisioningSteps, onClose }: UserDetailModalProps) {
   const assignedDevices = devices.filter(d => d.assignedTo === user.name || d.owner === user.name);
 
-  const apxNextSteps = Object.values(provisioningSteps.apxNext);
-  const apxN70Steps = Object.values(provisioningSteps.apxN70);
-  const phoneAppsSteps = Object.values(provisioningSteps.phoneApps || {});
-  const svxV700Steps = Object.values(provisioningSteps.svxV700 || {});
-  const allSteps = [...apxNextSteps, ...apxN70Steps, ...phoneAppsSteps, ...svxV700Steps];
-  const completedSteps = allSteps.filter(Boolean).length;
-  const provisioningStatus = completedSteps === 0 ? 'Not Started' : completedSteps === allSteps.length ? 'Completed' : 'In Progress';
+  const hasApxNext = assignedDevices.some(d => d.model === 'APX Next');
+  const hasApxN70 = assignedDevices.some(d => d.model === 'APX N70');
+  const hasPhone = !!(user.apxNextLogin || user.apxN70Login);
+  const hasSvxV700 = assignedDevices.some(d => d.model === 'V700' || d.model === 'SVX');
+
+  const relevantSteps = [];
+  if (hasApxNext) relevantSteps.push(...Object.values(provisioningSteps.apxNext));
+  if (hasApxN70) relevantSteps.push(...Object.values(provisioningSteps.apxN70));
+  if (hasPhone) relevantSteps.push(...Object.values(provisioningSteps.phoneApps || {}));
+  if (hasSvxV700) relevantSteps.push(...Object.values(provisioningSteps.svxV700 || {}));
+
+  const completedSteps = relevantSteps.filter(Boolean).length;
+  const provisioningStatus = relevantSteps.length === 0
+    ? 'Not Started'
+    : completedSteps === relevantSteps.length
+    ? 'Completed'
+    : completedSteps > 0
+    ? 'In Progress'
+    : 'Not Started';
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -262,11 +274,12 @@ export default function UserDetailModal({ user, devices, provisioningSteps, onCl
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                  <h4 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
-                    <Radio size={18} className="text-blue-600" />
-                    APX Next Provisioning
-                  </h4>
+                {hasApxNext && (
+                  <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                    <h4 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                      <Radio size={18} className="text-blue-600" />
+                      APX Next Provisioning
+                    </h4>
                   <div className="space-y-2">
                     {[
                       { key: 'createNextUser', label: 'Create Next User' },
@@ -293,14 +306,16 @@ export default function UserDetailModal({ user, devices, provisioningSteps, onCl
                         </div>
                       );
                     })}
+                    </div>
                   </div>
-                </div>
+                )}
 
-                <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-                  <h4 className="font-semibold text-purple-900 mb-3 flex items-center gap-2">
-                    <Radio size={18} className="text-purple-600" />
-                    APX N70 Provisioning
-                  </h4>
+                {hasApxN70 && (
+                  <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                    <h4 className="font-semibold text-purple-900 mb-3 flex items-center gap-2">
+                      <Radio size={18} className="text-purple-600" />
+                      APX N70 Provisioning
+                    </h4>
                   <div className="space-y-2">
                     {[
                       { key: 'createNextUser', label: 'Create Next User' },
@@ -327,14 +342,16 @@ export default function UserDetailModal({ user, devices, provisioningSteps, onCl
                         </div>
                       );
                     })}
+                    </div>
                   </div>
-                </div>
+                )}
 
-                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                  <h4 className="font-semibold text-green-900 mb-3 flex items-center gap-2">
-                    <Radio size={18} className="text-green-600" />
-                    Phone Applications
-                  </h4>
+                {hasPhone && (
+                  <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                    <h4 className="font-semibold text-green-900 mb-3 flex items-center gap-2">
+                      <Radio size={18} className="text-green-600" />
+                      Phone Applications
+                    </h4>
                   <div className="space-y-2">
                     {[
                       { key: 'responderCoreIdPhone', label: 'Responder <COREIDPHONE>' },
@@ -356,18 +373,24 @@ export default function UserDetailModal({ user, devices, provisioningSteps, onCl
                         </div>
                       );
                     })}
+                    </div>
                   </div>
-                </div>
+                )}
 
-                <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
-                  <h4 className="font-semibold text-amber-900 mb-3 flex items-center gap-2">
-                    <Radio size={18} className="text-amber-600" />
-                    SVX/V700
-                  </h4>
+                {hasSvxV700 && (
+                  <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
+                    <h4 className="font-semibold text-amber-900 mb-3 flex items-center gap-2">
+                      <Radio size={18} className="text-amber-600" />
+                      SVX/V700
+                    </h4>
                   <div className="space-y-2">
                     {[
                       { key: 'setupInDeviceManagement', label: 'Setup in Device Management' },
-                      { key: 'checkedOutToUser', label: 'Checked out to User' }
+                      { key: 'checkedOutToUser', label: 'Checked out to User' },
+                      { key: 'videoCoreIdCreated', label: 'VideoCore ID Created' },
+                      { key: 'videoCoreUserEnabled', label: 'VideoCore User Enabled' },
+                      { key: 'wifiCredsProvisioned', label: 'WiFi Credentials Provisioned' },
+                      { key: 'firmwareUpdated', label: 'Firmware Updated' }
                     ].map(step => {
                       const isComplete = provisioningSteps.svxV700?.[step.key as keyof typeof provisioningSteps.svxV700];
                       return (
@@ -383,8 +406,16 @@ export default function UserDetailModal({ user, devices, provisioningSteps, onCl
                         </div>
                       );
                     })}
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {!hasApxNext && !hasApxN70 && !hasPhone && !hasSvxV700 && (
+                  <div className="col-span-full bg-white rounded-lg p-8 text-center border border-slate-200">
+                    <AlertCircle size={40} className="mx-auto text-slate-400 mb-2" />
+                    <p className="text-slate-600">No equipment assigned for provisioning.</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

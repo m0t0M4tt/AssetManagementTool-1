@@ -150,10 +150,14 @@ export class DataService {
             rapidDeployLightning: rowData[59]?.toString()?.toUpperCase() === 'TRUE',
           };
 
-          // Body Worn Camera steps: BI-BJ (60-61)
+          // Body Worn Camera steps: BI-BN (60-65)
           const svxV700Steps = {
             setupInDeviceManagement: rowData[60]?.toString()?.toUpperCase() === 'TRUE',
             checkedOutToUser: rowData[61]?.toString()?.toUpperCase() === 'TRUE',
+            videoCoreIdCreated: rowData[62]?.toString()?.toUpperCase() === 'TRUE',
+            videoCoreUserEnabled: rowData[63]?.toString()?.toUpperCase() === 'TRUE',
+            wifiCredsProvisioned: rowData[64]?.toString()?.toUpperCase() === 'TRUE',
+            firmwareUpdated: rowData[65]?.toString()?.toUpperCase() === 'TRUE',
           };
 
           if (!colW?.trim() && !colX?.trim() && !colY?.trim() && !colZ?.trim()) {

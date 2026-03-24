@@ -30,6 +30,10 @@ export interface ProvisioningSteps {
   svxV700: {
     setupInDeviceManagement: boolean;
     checkedOutToUser: boolean;
+    videoCoreIdCreated: boolean;
+    videoCoreUserEnabled: boolean;
+    wifiCredsProvisioned: boolean;
+    firmwareUpdated: boolean;
   };
 }
 

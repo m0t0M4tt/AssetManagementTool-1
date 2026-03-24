@@ -104,17 +104,20 @@ export default function UserDirectory() {
   const getOverallProvisioningStatus = (user: User): 'Not Started' | 'In Progress' | 'Completed' => {
     if (!user.provisioningSteps) return 'Not Started';
 
-    const allSteps = [
-      ...Object.values(user.provisioningSteps.apxNext),
-      ...Object.values(user.provisioningSteps.apxN70),
-      ...Object.values(user.provisioningSteps.phoneApps || {}),
-      ...Object.values(user.provisioningSteps.svxV700 || {}),
-    ];
+    const equipment = hasEquipment(user, devices);
+    const relevantSteps = [];
 
-    const completedSteps = allSteps.filter(Boolean).length;
+    if (equipment.apxNext) relevantSteps.push(...Object.values(user.provisioningSteps.apxNext));
+    if (equipment.apxN70) relevantSteps.push(...Object.values(user.provisioningSteps.apxN70));
+    if (equipment.phone) relevantSteps.push(...Object.values(user.provisioningSteps.phoneApps || {}));
+    if (equipment.svxV700) relevantSteps.push(...Object.values(user.provisioningSteps.svxV700 || {}));
+
+    if (relevantSteps.length === 0) return 'Not Started';
+
+    const completedSteps = relevantSteps.filter(Boolean).length;
 
     if (completedSteps === 0) return 'Not Started';
-    if (completedSteps === allSteps.length) return 'Completed';
+    if (completedSteps === relevantSteps.length) return 'Completed';
     return 'In Progress';
   };
 
@@ -378,6 +381,10 @@ export default function UserDirectory() {
             svxV700: {
               setupInDeviceManagement: false,
               checkedOutToUser: false,
+              videoCoreIdCreated: false,
+              videoCoreUserEnabled: false,
+              wifiCredsProvisioned: false,
+              firmwareUpdated: false,
             }
           }}
           onClose={() => setViewingUser(null)}

@@ -74,15 +74,15 @@ export async function getSheetDataConsolidated(
   }
 
   try {
-    // SINGLE API CALL: Load all cells from A1:BJ600
-    // This ensures we capture ALL provisioning columns (AM-BJ = 38-61)
-    await retryWithBackoff(() => sheet.loadCells('A1:BJ600'));
+    // SINGLE API CALL: Load all cells from A1:BN600
+    // This ensures we capture ALL provisioning columns (AM-BN = 38-65)
+    await retryWithBackoff(() => sheet.loadCells('A1:BN600'));
 
     // Extract headers from Row 3 (index 2)
     const headers: string[] = [];
     const headerRowIndex = HEADER_ROW_INDEX;
 
-    for (let col = 0; col < 62; col++) { // Columns A-BJ (0-61)
+    for (let col = 0; col < 66; col++) { // Columns A-BN (0-65)
       const cell = sheet.getCell(headerRowIndex, col);
       headers.push(cell.value?.toString() || '');
     }
@@ -95,7 +95,7 @@ export async function getSheetDataConsolidated(
       const rowData: any[] = [];
       let hasData = false;
 
-      for (let col = 0; col < 62; col++) { // Columns A-BJ (0-61)
+      for (let col = 0; col < 66; col++) { // Columns A-BN (0-65)
         const cell = sheet.getCell(row, col);
         const value = cell.value;
         rowData.push(value);
@@ -108,7 +108,7 @@ export async function getSheetDataConsolidated(
       }
     }
 
-    console.log(`[${tabName}] Loaded ${headers.length} headers and ${rows.length} data rows (range: A1:BJ600)`);
+    console.log(`[${tabName}] Loaded ${headers.length} headers and ${rows.length} data rows (range: A1:BN600)`);
 
     return { headers, rows };
   } catch (error) {
@@ -131,7 +131,7 @@ export async function getSheetWithCustomHeader(
 
   try {
     // Load cells for all columns including provisioning
-    await retryWithBackoff(() => sheet.loadCells('A1:BJ600'));
+    await retryWithBackoff(() => sheet.loadCells('A1:BN600'));
 
     // Load headers
     await sheet.loadHeaderRow(HEADER_ROW_INDEX);
