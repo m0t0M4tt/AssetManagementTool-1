@@ -162,7 +162,7 @@ export class DataService {
 
           // Debug logging for SVX/V700 data
           if (rowData[60] || rowData[61] || rowData[62] || rowData[63] || rowData[64] || rowData[65]) {
-            console.log(`SVX/V700 data for ${firstName} ${lastName}:`, {
+            console.log(`SVX/V700 data for ${owner}:`, {
               raw: [rowData[60], rowData[61], rowData[62], rowData[63], rowData[64], rowData[65]],
               parsed: svxV700Steps
             });
