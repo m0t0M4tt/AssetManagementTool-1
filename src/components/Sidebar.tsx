@@ -9,7 +9,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
-  const { userEmail, logout } = useAuth();
+  const { logout } = useAuth();
 
   const menuItems = [
     { id: 'dashboard' as PageType, label: 'Dashboard', icon: LayoutDashboard },
@@ -52,12 +52,7 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
         })}
       </nav>
 
-      <div className="p-4 border-t border-slate-700 space-y-3">
-        <div>
-          <p className="text-xs text-slate-400 mb-1">Signed in as</p>
-          <p className="text-sm text-slate-200 truncate">{userEmail}</p>
-        </div>
-
+      <div className="p-4 border-t border-slate-700">
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-2 px-4 py-2 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
