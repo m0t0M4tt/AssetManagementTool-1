@@ -112,7 +112,7 @@ export class ProvisioningService {
 
       const columnIndex = this.getColumnIndexForStep(section, stepKey);
       const cell = sheet.getCell(userRowIndex, columnIndex);
-      cell.value = value ? 'TRUE' : '';
+      cell.value = value ? true : false;
 
       await sheet.saveUpdatedCells();
       console.log(`Updated ${section}.${stepKey} to ${value} for user ${user.email || user.name}`);
@@ -175,7 +175,7 @@ export class ProvisioningService {
       for (const update of updates) {
         const columnIndex = this.getColumnIndexForStep(update.section, update.stepKey);
         const cell = sheet.getCell(userRowIndex, columnIndex);
-        cell.value = update.value ? 'TRUE' : '';
+        cell.value = update.value ? true : false;
       }
 
       // Save all updates in a single batch request

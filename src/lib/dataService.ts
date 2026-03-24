@@ -116,48 +116,55 @@ export class DataService {
 
           // Provisioning columns: AM to BJ (columns 38-61)
           // Column AM = index 38, AN = 39, etc.
+          // Helper function to check if a value is truthy (boolean true or string 'TRUE')
+          const isTruthy = (val: any): boolean => {
+            if (val === true) return true;
+            if (typeof val === 'string' && val.toUpperCase() === 'TRUE') return true;
+            return false;
+          };
+
           // APX Next steps: AM-AU (38-46)
           const apxNextSteps = {
-            createNextUser: rowData[38]?.toString()?.toUpperCase() === 'TRUE',
-            provisionP1UserRoles: rowData[39]?.toString()?.toUpperCase() === 'TRUE',
-            provisionP1ConcurrentLogins: rowData[40]?.toString()?.toUpperCase() === 'TRUE',
-            p1ProvisionUnitId: rowData[41]?.toString()?.toUpperCase() === 'TRUE',
-            p1UnitPreassignment: rowData[42]?.toString()?.toUpperCase() === 'TRUE',
-            placeUnitOnDutyPsap: rowData[43]?.toString()?.toUpperCase() === 'TRUE',
-            awareAddDevice: rowData[44]?.toString()?.toUpperCase() === 'TRUE',
-            p1AddDevice: rowData[45]?.toString()?.toUpperCase() === 'TRUE',
-            awareDataSharing: rowData[46]?.toString()?.toUpperCase() === 'TRUE',
+            createNextUser: isTruthy(rowData[38]),
+            provisionP1UserRoles: isTruthy(rowData[39]),
+            provisionP1ConcurrentLogins: isTruthy(rowData[40]),
+            p1ProvisionUnitId: isTruthy(rowData[41]),
+            p1UnitPreassignment: isTruthy(rowData[42]),
+            placeUnitOnDutyPsap: isTruthy(rowData[43]),
+            awareAddDevice: isTruthy(rowData[44]),
+            p1AddDevice: isTruthy(rowData[45]),
+            awareDataSharing: isTruthy(rowData[46]),
           };
 
           // APX N70 steps: AV-BD (47-55)
           const apxN70Steps = {
-            createNextUser: rowData[47]?.toString()?.toUpperCase() === 'TRUE',
-            provisionP1UserRoles: rowData[48]?.toString()?.toUpperCase() === 'TRUE',
-            provisionP1ConcurrentLogins: rowData[49]?.toString()?.toUpperCase() === 'TRUE',
-            p1ProvisionUnitId: rowData[50]?.toString()?.toUpperCase() === 'TRUE',
-            p1UnitPreassignment: rowData[51]?.toString()?.toUpperCase() === 'TRUE',
-            placeUnitOnDutyPsap: rowData[52]?.toString()?.toUpperCase() === 'TRUE',
-            awareAddDevice: rowData[53]?.toString()?.toUpperCase() === 'TRUE',
-            p1AddDevice: rowData[54]?.toString()?.toUpperCase() === 'TRUE',
-            awareDataSharing: rowData[55]?.toString()?.toUpperCase() === 'TRUE',
+            createNextUser: isTruthy(rowData[47]),
+            provisionP1UserRoles: isTruthy(rowData[48]),
+            provisionP1ConcurrentLogins: isTruthy(rowData[49]),
+            p1ProvisionUnitId: isTruthy(rowData[50]),
+            p1UnitPreassignment: isTruthy(rowData[51]),
+            placeUnitOnDutyPsap: isTruthy(rowData[52]),
+            awareAddDevice: isTruthy(rowData[53]),
+            p1AddDevice: isTruthy(rowData[54]),
+            awareDataSharing: isTruthy(rowData[55]),
           };
 
           // Phone Apps steps: BE-BH (56-59)
           const phoneAppsSteps = {
-            responderCoreIdPhone: rowData[56]?.toString()?.toUpperCase() === 'TRUE',
-            responderCoreIdPd: rowData[57]?.toString()?.toUpperCase() === 'TRUE',
-            rapidDeployMapping: rowData[58]?.toString()?.toUpperCase() === 'TRUE',
-            rapidDeployLightning: rowData[59]?.toString()?.toUpperCase() === 'TRUE',
+            responderCoreIdPhone: isTruthy(rowData[56]),
+            responderCoreIdPd: isTruthy(rowData[57]),
+            rapidDeployMapping: isTruthy(rowData[58]),
+            rapidDeployLightning: isTruthy(rowData[59]),
           };
 
           // Body Worn Camera steps: BI-BN (60-65)
           const svxV700Steps = {
-            svxInDeviceManagement: rowData[60]?.toString()?.toUpperCase() === 'TRUE',
-            svxCheckedOutToUser: rowData[61]?.toString()?.toUpperCase() === 'TRUE',
-            svxAssignedInAware: rowData[62]?.toString()?.toUpperCase() === 'TRUE',
-            v700InDeviceManagement: rowData[63]?.toString()?.toUpperCase() === 'TRUE',
-            v700CheckOutToUser: rowData[64]?.toString()?.toUpperCase() === 'TRUE',
-            v700AssignedInAware: rowData[65]?.toString()?.toUpperCase() === 'TRUE',
+            svxInDeviceManagement: isTruthy(rowData[60]),
+            svxCheckedOutToUser: isTruthy(rowData[61]),
+            svxAssignedInAware: isTruthy(rowData[62]),
+            v700InDeviceManagement: isTruthy(rowData[63]),
+            v700CheckOutToUser: isTruthy(rowData[64]),
+            v700AssignedInAware: isTruthy(rowData[65]),
           };
 
           // Debug logging for SVX/V700 data
