@@ -40,11 +40,13 @@ export default function Header() {
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setShowDropdown(!showDropdown)}
-            className="flex flex-col items-end gap-1 hover:bg-slate-600 px-3 py-2 rounded transition-colors"
+            className="flex items-center gap-3 hover:bg-slate-600 px-3 py-2 rounded transition-colors"
           >
-            <span className="text-slate-300 text-xs leading-tight">Signed in as</span>
-            <span className="text-slate-100 leading-tight">{userEmail}</span>
-            <ChevronDown size={24} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ marginLeft: '8px' }} />
+            <div className="flex flex-col items-end gap-0.5">
+              <span className="text-slate-300 text-sm leading-tight">Signed in as</span>
+              <span className="text-slate-100 text-base leading-tight">{userEmail}</span>
+            </div>
+            <ChevronDown size={24} />
           </button>
 
           {showDropdown && (
