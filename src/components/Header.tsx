@@ -26,8 +26,8 @@ export default function Header() {
 
   return (
     <header className="bg-slate-700 text-white h-20 flex items-center justify-between px-10 text-sm border-b border-slate-600">
-      <div className="flex items-center gap-2" style={{ height: '19px' }}>
-        <span className="font-semibold text-base leading-[19px]">CommandCentral Asset Manager</span>
+      <div className="flex items-center gap-2">
+        <span className="font-semibold text-xl">CommandCentral Asset Manager</span>
       </div>
 
       <div className="flex items-center gap-6">
