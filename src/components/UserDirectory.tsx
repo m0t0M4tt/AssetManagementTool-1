@@ -1,10 +1,8 @@
-import { useState, useEffect } from 'react';
-import { Search, Plus, Pencil, Trash2, X, CheckCircle2, Circle, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
+import { Search, Plus, Pencil, Trash2, X, CheckCircle2, Circle, RefreshCw, Minus } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import type { User } from '../lib/types';
 import UserDetailModal from './UserDetailModal';
-
-const PROVISIONING_STORAGE_KEY = 'userProvisioningState';
 
 export default function UserDirectory() {
   const { users, devices, usersLoading: loading, usersError: error, addUser, updateUser, deleteUser, refreshData } = useData();
@@ -23,18 +21,6 @@ export default function UserDirectory() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [viewingUser, setViewingUser] = useState<User | null>(null);
-  const [userProvisioningState, setUserProvisioningState] = useState<Map<string, User['provisioningSteps']>>(() => {
-    try {
-      const saved = localStorage.getItem(PROVISIONING_STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return new Map(Object.entries(parsed));
-      }
-    } catch (error) {
-      console.error('Failed to load provisioning state from localStorage:', error);
-    }
-    return new Map();
-  });
 
   // Get unique tabs for filter dropdown
   const uniqueTabs = ['all', ...Array.from(new Set(users.map(u => u.sourceTab)))].filter(Boolean);
@@ -101,39 +87,46 @@ export default function UserDirectory() {
     }
   };
 
-  useEffect(() => {
-    try {
-      const stateObj = Object.fromEntries(userProvisioningState);
-      localStorage.setItem(PROVISIONING_STORAGE_KEY, JSON.stringify(stateObj));
-    } catch (error) {
-      console.error('Failed to save provisioning state to localStorage:', error);
-    }
-  }, [userProvisioningState]);
+  const getEquipmentProvisioningStatus = (user: User, equipmentType: 'apxNext' | 'apxN70' | 'phoneApps' | 'svxV700'): 'completed' | 'partial' | 'none' => {
+    if (!user.provisioningSteps) return 'none';
 
-  const toggleProvisioningStep = (userId: string, step: 'stage' | 'enroll' | 'test') => {
-    const currentSteps = userProvisioningState.get(userId) || {
-      stage: false,
-      enroll: false,
-      test: false,
-    };
+    const steps = user.provisioningSteps[equipmentType];
+    if (!steps) return 'none';
 
-    const updatedSteps = {
-      ...currentSteps,
-      [step]: !currentSteps[step],
-    };
+    const allSteps = Object.values(steps);
+    const completedSteps = allSteps.filter(Boolean).length;
 
-    const newState = new Map(userProvisioningState);
-    newState.set(userId, updatedSteps);
-    setUserProvisioningState(newState);
+    if (completedSteps === 0) return 'none';
+    if (completedSteps === allSteps.length) return 'completed';
+    return 'partial';
   };
 
-  const getProvisioningStatus = (userId: string): 'Not Started' | 'In Progress' | 'Completed' => {
-    const steps = userProvisioningState.get(userId) || { stage: false, enroll: false, test: false };
-    const completedSteps = Object.values(steps).filter(Boolean).length;
+  const getOverallProvisioningStatus = (user: User): 'Not Started' | 'In Progress' | 'Completed' => {
+    if (!user.provisioningSteps) return 'Not Started';
+
+    const allSteps = [
+      ...Object.values(user.provisioningSteps.apxNext),
+      ...Object.values(user.provisioningSteps.apxN70),
+      ...Object.values(user.provisioningSteps.phoneApps || {}),
+      ...Object.values(user.provisioningSteps.svxV700 || {}),
+    ];
+
+    const completedSteps = allSteps.filter(Boolean).length;
 
     if (completedSteps === 0) return 'Not Started';
-    if (completedSteps === 3) return 'Completed';
+    if (completedSteps === allSteps.length) return 'Completed';
     return 'In Progress';
+  };
+
+  const hasEquipment = (user: User, devices: any[]): { apxNext: boolean; apxN70: boolean; phone: boolean; svxV700: boolean } => {
+    const userDevices = devices.filter(d => d.assignedTo === user.name || d.owner === user.name);
+
+    return {
+      apxNext: userDevices.some(d => d.model === 'APX Next'),
+      apxN70: userDevices.some(d => d.model === 'APX N70'),
+      phone: !!(user.apxNextLogin || user.apxN70Login),
+      svxV700: userDevices.some(d => d.model === 'V700' || d.model === 'SVX'),
+    };
   };
 
   if (loading) {
@@ -220,8 +213,8 @@ export default function UserDirectory() {
           </thead>
           <tbody className="divide-y divide-slate-200">
             {filteredUsers.map((user) => {
-              const steps = userProvisioningState.get(user.id) || { stage: false, enroll: false, test: false };
-              const provStatus = getProvisioningStatus(user.id);
+              const equipment = hasEquipment(user, devices);
+              const provStatus = getOverallProvisioningStatus(user);
 
               return (
                 <tr key={user.id} className="hover:bg-slate-50 transition-colors cursor-pointer">
@@ -234,55 +227,54 @@ export default function UserDirectory() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-xs">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleProvisioningStep(user.id, 'stage');
-                          }}
-                          className="flex items-center gap-1 hover:text-blue-600 transition-colors"
-                        >
-                          {steps.stage ? (
-                            <CheckCircle2 size={16} className="text-green-600" />
+                    <div className="flex items-center gap-2">
+                      {equipment.apxNext && (
+                        <div className="flex items-center gap-1">
+                          {getEquipmentProvisioningStatus(user, 'apxNext') === 'completed' ? (
+                            <CheckCircle2 size={18} className="text-green-600" title="APX Next - All steps completed" />
+                          ) : getEquipmentProvisioningStatus(user, 'apxNext') === 'partial' ? (
+                            <Minus size={18} className="text-amber-600" title="APX Next - In progress" />
                           ) : (
-                            <Circle size={16} className="text-slate-300" />
+                            <Circle size={18} className="text-slate-300" title="APX Next - Not started" />
                           )}
-                          <span className={steps.stage ? 'text-green-700 font-medium' : 'text-slate-600'}>Stage</span>
-                        </button>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleProvisioningStep(user.id, 'enroll');
-                          }}
-                          className="flex items-center gap-1 hover:text-blue-600 transition-colors"
-                        >
-                          {steps.enroll ? (
-                            <CheckCircle2 size={16} className="text-green-600" />
+                        </div>
+                      )}
+                      {equipment.apxN70 && (
+                        <div className="flex items-center gap-1">
+                          {getEquipmentProvisioningStatus(user, 'apxN70') === 'completed' ? (
+                            <CheckCircle2 size={18} className="text-green-600" title="APX N70 - All steps completed" />
+                          ) : getEquipmentProvisioningStatus(user, 'apxN70') === 'partial' ? (
+                            <Minus size={18} className="text-amber-600" title="APX N70 - In progress" />
                           ) : (
-                            <Circle size={16} className="text-slate-300" />
+                            <Circle size={18} className="text-slate-300" title="APX N70 - Not started" />
                           )}
-                          <span className={steps.enroll ? 'text-green-700 font-medium' : 'text-slate-600'}>Enroll</span>
-                        </button>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleProvisioningStep(user.id, 'test');
-                          }}
-                          className="flex items-center gap-1 hover:text-blue-600 transition-colors"
-                        >
-                          {steps.test ? (
-                            <CheckCircle2 size={16} className="text-green-600" />
+                        </div>
+                      )}
+                      {equipment.phone && (
+                        <div className="flex items-center gap-1">
+                          {getEquipmentProvisioningStatus(user, 'phoneApps') === 'completed' ? (
+                            <CheckCircle2 size={18} className="text-green-600" title="Phone Apps - All steps completed" />
+                          ) : getEquipmentProvisioningStatus(user, 'phoneApps') === 'partial' ? (
+                            <Minus size={18} className="text-amber-600" title="Phone Apps - In progress" />
                           ) : (
-                            <Circle size={16} className="text-slate-300" />
+                            <Circle size={18} className="text-slate-300" title="Phone Apps - Not started" />
                           )}
-                          <span className={steps.test ? 'text-green-700 font-medium' : 'text-slate-600'}>Test</span>
-                        </button>
-                      </div>
+                        </div>
+                      )}
+                      {equipment.svxV700 && (
+                        <div className="flex items-center gap-1">
+                          {getEquipmentProvisioningStatus(user, 'svxV700') === 'completed' ? (
+                            <CheckCircle2 size={18} className="text-green-600" title="SVX/V700 - All steps completed" />
+                          ) : getEquipmentProvisioningStatus(user, 'svxV700') === 'partial' ? (
+                            <Minus size={18} className="text-amber-600" title="SVX/V700 - In progress" />
+                          ) : (
+                            <Circle size={18} className="text-slate-300" title="SVX/V700 - Not started" />
+                          )}
+                        </div>
+                      )}
+                      {!equipment.apxNext && !equipment.apxN70 && !equipment.phone && !equipment.svxV700 && (
+                        <span className="text-xs text-slate-400">No equipment</span>
+                      )}
                     </div>
                   </td>
                   <td onClick={() => setViewingUser(user)} className="px-6 py-4">
