@@ -34,7 +34,7 @@ export default function Header() {
         <SessionTimer />
 
         <button className="flex items-center gap-1 hover:bg-slate-600 px-3 py-2 rounded transition-colors">
-          <HelpCircle size={18} />
+          <HelpCircle size={24} />
         </button>
 
         <div className="relative" ref={dropdownRef}>
@@ -44,7 +44,7 @@ export default function Header() {
           >
             <span className="text-slate-300 text-xs">Signed in as</span>
             <span className="text-slate-100">{userEmail}</span>
-            <ChevronDown size={16} />
+            <ChevronDown size={24} />
           </button>
 
           {showDropdown && (
@@ -53,7 +53,7 @@ export default function Header() {
                 onClick={handleLogout}
                 className="w-full flex items-center gap-2 px-4 py-2 text-left text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
               >
-                <LogOut size={16} />
+                <LogOut size={24} />
                 <span className="text-sm">Sign Out</span>
               </button>
             </div>
