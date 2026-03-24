@@ -25,7 +25,7 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-slate-900 text-white h-14 flex items-center justify-between px-6 text-sm border-b border-slate-700">
+    <header className="bg-slate-700 text-white h-14 flex items-center justify-between px-6 text-sm border-b border-slate-600">
       <div className="flex items-center gap-2">
         <span className="font-semibold text-base">CommandCentral Asset Manager</span>
       </div>
@@ -33,17 +33,17 @@ export default function Header() {
       <div className="flex items-center gap-6">
         <SessionTimer />
 
-        <button className="flex items-center gap-1 hover:bg-slate-800 px-3 py-2 rounded transition-colors">
+        <button className="flex items-center gap-1 hover:bg-slate-600 px-3 py-2 rounded transition-colors">
           <HelpCircle size={18} />
         </button>
 
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setShowDropdown(!showDropdown)}
-            className="flex items-center gap-3 hover:bg-slate-800 px-3 py-2 rounded transition-colors"
+            className="flex items-center gap-3 hover:bg-slate-600 px-3 py-2 rounded transition-colors"
           >
-            <span className="text-slate-400 text-xs">Signed in as</span>
-            <span className="text-slate-200">{userEmail}</span>
+            <span className="text-slate-300 text-xs">Signed in as</span>
+            <span className="text-slate-100">{userEmail}</span>
             <ChevronDown size={16} />
           </button>
 

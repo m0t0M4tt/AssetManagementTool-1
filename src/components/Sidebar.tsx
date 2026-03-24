@@ -20,14 +20,14 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
 
   return (
     <div
-      className={`bg-slate-900 text-white h-full flex flex-col transition-all duration-300 ${
+      className={`bg-slate-700 text-white h-full flex flex-col transition-all duration-300 ${
         isExpanded ? 'w-64' : 'w-20'
       }`}
     >
-      <div className="flex items-center justify-end p-4 border-b border-slate-700">
+      <div className="flex items-center justify-end p-4 border-b border-slate-600">
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
+          className="p-2 hover:bg-slate-600 rounded-lg transition-colors"
         >
           {isExpanded ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
         </button>
@@ -45,7 +45,7 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
               className={`w-full flex items-center gap-3 px-4 py-4 rounded-lg mb-3 transition-all ${
                 isActive
                   ? 'bg-blue-600 text-white'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  : 'text-slate-200 hover:bg-slate-600 hover:text-white'
               }`}
               title={!isExpanded ? item.label : undefined}
             >
