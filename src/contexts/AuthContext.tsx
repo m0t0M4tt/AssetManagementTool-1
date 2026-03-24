@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-const SESSION_DURATION = 12 * 60 * 60 * 1000; // 12 hours in milliseconds
+const SESSION_DURATION = 60 * 60 * 1000; // 1 hour in milliseconds
 const WARNING_THRESHOLD = 5 * 60 * 1000; // 5 minutes before expiration
 
 interface AuthContextType {
