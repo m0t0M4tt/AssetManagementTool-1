@@ -34,7 +34,7 @@ export function Login() {
     onError: (error) => {
       console.error('Login failed:', error);
     },
-    scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email',
+    scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gmail.send',
   });
 
   return (
@@ -98,6 +98,7 @@ export function Login() {
                   <ul className="list-disc list-inside space-y-1 text-slate-600">
                     <li>Access to Google Sheets</li>
                     <li>View your email address</li>
+                    <li>Send emails on your behalf</li>
                   </ul>
                 </div>
               </div>

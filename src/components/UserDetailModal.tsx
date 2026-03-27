@@ -1,5 +1,8 @@
-import { X, User as UserIcon, Mail, MapPin, Package, Radio, CheckCircle2, Circle, AlertCircle } from 'lucide-react';
+import { X, User as UserIcon, Mail, MapPin, Package, Radio, CheckCircle2, Circle, AlertCircle, Send } from 'lucide-react';
+import { useState } from 'react';
 import type { User, Device, ProvisioningSteps } from '../lib/types';
+import { EmailService } from '../lib/emailService';
+import { useAuth } from '../contexts/AuthContext';
 
 interface UserDetailModalProps {
   user: User;
@@ -9,7 +12,35 @@ interface UserDetailModalProps {
 }
 
 export default function UserDetailModal({ user, devices, provisioningSteps, onClose }: UserDetailModalProps) {
+  const { accessToken } = useAuth();
+  const [isSending, setIsSending] = useState(false);
+  const [emailStatus, setEmailStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const assignedDevices = devices.filter(d => d.assignedTo === user.name || d.owner === user.name);
+
+  const handleSendEmail = async () => {
+    if (!accessToken) {
+      setEmailStatus({ type: 'error', message: 'Not authenticated' });
+      return;
+    }
+
+    setIsSending(true);
+    setEmailStatus(null);
+
+    const result = await EmailService.sendUserInfoEmail(
+      accessToken,
+      user.email,
+      { user, devices }
+    );
+
+    setIsSending(false);
+
+    if (result.success) {
+      setEmailStatus({ type: 'success', message: `Email sent successfully to ${user.email}` });
+      setTimeout(() => setEmailStatus(null), 5000);
+    } else {
+      setEmailStatus({ type: 'error', message: result.error || 'Failed to send email' });
+    }
+  };
 
   const hasApxNext = assignedDevices.some(d => d.model === 'APX Next');
   const hasApxN70 = assignedDevices.some(d => d.model === 'APX N70');
@@ -422,12 +453,33 @@ export default function UserDetailModal({ user, devices, provisioningSteps, onCl
         </div>
 
         <div className="sticky bottom-0 bg-slate-50 border-t border-slate-200 px-6 py-4">
-          <button
-            onClick={onClose}
-            className="w-full px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors font-medium"
-          >
-            Close
-          </button>
+          {emailStatus && (
+            <div
+              className={`mb-4 px-4 py-3 rounded-lg ${
+                emailStatus.type === 'success'
+                  ? 'bg-green-50 border border-green-200 text-green-800'
+                  : 'bg-red-50 border border-red-200 text-red-800'
+              }`}
+            >
+              <p className="text-sm font-medium">{emailStatus.message}</p>
+            </div>
+          )}
+          <div className="flex gap-3">
+            <button
+              onClick={handleSendEmail}
+              disabled={isSending}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              <Send size={18} />
+              {isSending ? 'Sending...' : 'Email Login Info'}
+            </button>
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors font-medium"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </div>

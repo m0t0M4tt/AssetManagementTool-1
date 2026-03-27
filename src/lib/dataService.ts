@@ -87,34 +87,34 @@ export class DataService {
         for (const rowData of rows) {
           const owner = rowData[1]?.toString() || '';
           const loginC = rowData[2]?.toString() || '';
-          const loginH = rowData[7]?.toString() || '';
-          const responderDeviceId = rowData[10]?.toString() || ''; // Column K
+          const loginH = rowData[6]?.toString() || '';
+          const responderDeviceId = rowData[9]?.toString() || ''; // Column J
           const unit = rowData[11]?.toString() || '';
           const alias = rowData[12]?.toString() || '';
 
           // Correct column mappings based on user specification:
-          // Column N (index 13) = CAD UNIT (APX Next Unit ID)
-          // Column O (index 14) = CAD Unit N70 (N70 Unit ID)
-          const apxNextUnitId = rowData[13]?.toString() || '';
-          const apxN70UnitId = rowData[14]?.toString() || '';
+          // Column M (index 12) = CAD UNIT (APX Next Unit ID)
+          // Column N (index 13) = CAD Unit N70 (N70 Unit ID)
+          const apxNextUnitId = rowData[12]?.toString() || '';
+          const apxN70UnitId = rowData[13]?.toString() || '';
 
           // CommandCentral Responder Aliases:
-          // Column AH (index 33) = APX Next Alias
-          // Column AI (index 34) = APX N70 Alias
-          const apxNextAlias = rowData[33]?.toString() || '';
-          const apxN70Alias = rowData[34]?.toString() || '';
+          // Column AG (index 32) = APX Next Alias
+          // Column AH (index 33) = APX N70 Alias
+          const apxNextAlias = rowData[32]?.toString() || '';
+          const apxN70Alias = rowData[33]?.toString() || '';
 
-          const colW = rowData[22]?.toString() || '';
-          const colX = rowData[23]?.toString() || '';
-          const colY = rowData[24]?.toString() || '';
-          const colZ = rowData[25]?.toString() || '';
+          const colW = rowData[21]?.toString() || '';
+          const colX = rowData[22]?.toString() || '';
+          const colY = rowData[23]?.toString() || '';
+          const colZ = rowData[24]?.toString() || '';
 
-          const radioIdAD = rowData[29]?.toString() || '';
-          const radioIdAE = rowData[30]?.toString() || '';
-          const radioIdAF = rowData[31]?.toString() || '';
-          const radioIdAG = rowData[32]?.toString() || '';
+          const radioIdAD = rowData[28]?.toString() || '';
+          const radioIdAE = rowData[29]?.toString() || '';
+          const radioIdAF = rowData[30]?.toString() || '';
+          const radioIdAG = rowData[31]?.toString() || '';
 
-          // Provisioning columns: AM to BJ (columns 38-61)
+          // Provisioning columns: AM to BN (columns 38-65)
           // Column AM = index 38, AN = 39, etc.
           // Helper function to check if a value is truthy (boolean true or string 'TRUE')
           const isTruthy = (val: any): boolean => {
@@ -309,8 +309,8 @@ export class DataService {
                 loginH,
                 unit,
                 alias,
-                apxNextUnitId: `col[13]="${apxNextUnitId}"`,
-                apxN70UnitId: `col[14]="${apxN70UnitId}"`,
+                apxNextUnitId: `col[12]="${apxNextUnitId}"`,
+                apxN70UnitId: `col[13]="${apxN70UnitId}"`,
                 apxNextSteps,
                 apxN70Steps,
                 phoneAppsSteps,
@@ -470,19 +470,19 @@ export class DataService {
         for (const rowData of rows) {
           const owner = rowData[1]?.toString() || '';
           const loginC = rowData[2]?.toString() || '';
-          const loginH = rowData[7]?.toString() || '';
+          const loginH = rowData[6]?.toString() || '';
           const unit = rowData[11]?.toString() || '';
           const alias = rowData[12]?.toString() || '';
 
-          const colW = rowData[22]?.toString() || '';
-          const colX = rowData[23]?.toString() || '';
-          const colY = rowData[24]?.toString() || '';
-          const colZ = rowData[25]?.toString() || '';
+          const colW = rowData[21]?.toString() || '';
+          const colX = rowData[22]?.toString() || '';
+          const colY = rowData[23]?.toString() || '';
+          const colZ = rowData[24]?.toString() || '';
 
-          const radioIdAD = rowData[29]?.toString() || '';
-          const radioIdAE = rowData[30]?.toString() || '';
-          const radioIdAF = rowData[31]?.toString() || '';
-          const radioIdAG = rowData[32]?.toString() || '';
+          const radioIdAD = rowData[28]?.toString() || '';
+          const radioIdAE = rowData[29]?.toString() || '';
+          const radioIdAF = rowData[30]?.toString() || '';
+          const radioIdAG = rowData[31]?.toString() || '';
 
           if (!colW?.trim() && !colX?.trim() && !colY?.trim() && !colZ?.trim()) {
             continue;
@@ -650,7 +650,7 @@ export class DataService {
         const rows = await sheet.getRows();
         const row = rows.find(r => {
           const apxEmail = this.getValueByIndex(r, 2);
-          const n70Email = this.getValueByIndex(r, 7);
+          const n70Email = this.getValueByIndex(r, 6);
           return apxEmail === updates.email || n70Email === updates.email;
         });
 
@@ -678,7 +678,7 @@ export class DataService {
 
         for (const row of rows) {
           const apxEmail = this.getValueByIndex(row, 2);
-          const n70Email = this.getValueByIndex(row, 7);
+          const n70Email = this.getValueByIndex(row, 6);
 
           if (row._rawData && (apxEmail || n70Email)) {
             await row.delete();
